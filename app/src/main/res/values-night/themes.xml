@@ -1,0 +1,4 @@
+<resources>
+    <!-- Dark window background so the app does not flash white on launch in dark mode. -->
+    <style name="Theme.DayFlow" parent="android:Theme.Material.NoActionBar" />
+</resources>
