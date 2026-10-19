@@ -58,12 +58,14 @@ fun DashboardScreen(
     now: LocalDateTime,
     notificationsOk: Boolean,
     exactAlarmsOk: Boolean,
+    fullScreenOk: Boolean,
     onSelectDay: (LocalDate) -> Unit,
     onAdd: () -> Unit,
     onEdit: (Reminder) -> Unit,
     onToggleDone: (Reminder, Boolean) -> Unit,
     onFixNotifications: () -> Unit,
     onFixExactAlarms: () -> Unit,
+    onFixFullScreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val today = now.toLocalDate()
@@ -126,6 +128,14 @@ fun DashboardScreen(
                     text = stringResource(R.string.notice_exact_off),
                     action = stringResource(R.string.notice_exact_action),
                     onAction = onFixExactAlarms,
+                )
+            }
+
+            if (!fullScreenOk) {
+                NoticeCard(
+                    text = stringResource(R.string.notice_fullscreen_off),
+                    action = stringResource(R.string.notice_fullscreen_action),
+                    onAction = onFixFullScreen,
                 )
             }
 
@@ -289,9 +299,9 @@ private fun DashboardPreview() {
     DayFlowTheme {
         DashboardScreen(
             reminders = sample, selectedDay = today, now = today.atTime(12, 0),
-            notificationsOk = true, exactAlarmsOk = true,
+            notificationsOk = true, exactAlarmsOk = true, fullScreenOk = true,
             onSelectDay = {}, onAdd = {}, onEdit = {}, onToggleDone = { _, _ -> },
-            onFixNotifications = {}, onFixExactAlarms = {},
+            onFixNotifications = {}, onFixExactAlarms = {}, onFixFullScreen = {},
         )
     }
 }

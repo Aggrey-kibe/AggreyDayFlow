@@ -52,6 +52,7 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
     val tick = viewModel.statusTick
     val notificationsOk = PermissionHelper.notificationsEnabled(context)
     val exactOk = PermissionHelper.exactAlarmsAllowed(context)
+    val fullScreenOk = PermissionHelper.fullScreenAlertsAllowed(context)
 
     val editing = viewModel.reminders.firstOrNull { it.id == editingId }
     // If the reminder being edited no longer exists, fall back to the dashboard instead of an empty editor.
@@ -90,6 +91,7 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
             now = now,
             notificationsOk = notificationsOk,
             exactAlarmsOk = exactOk,
+            fullScreenOk = fullScreenOk,
             onSelectDay = viewModel::selectDay,
             onAdd = {
                 editingId = 0L
@@ -102,6 +104,7 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
             onToggleDone = { reminder, done -> viewModel.setCompleted(reminder.id, viewModel.selectedDay, done) },
             onFixNotifications = { requestNotificationsOrOpenSettings() },
             onFixExactAlarms = { PermissionHelper.openExactAlarmSettings(context) },
+            onFixFullScreen = { PermissionHelper.openFullScreenSettings(context) },
         )
     }
 }

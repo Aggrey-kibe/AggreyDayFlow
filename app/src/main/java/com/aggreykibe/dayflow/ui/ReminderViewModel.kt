@@ -55,6 +55,7 @@ class ReminderViewModel(app: Application) : AndroidViewModel(app) {
     fun delete(id: Long) {
         persist(reminders.filterNot { it.id == id })
         scheduler.cancel(id)
+        scheduler.cancelSnooze(id)
     }
 
     fun setCompleted(id: Long, day: LocalDate, completed: Boolean) {

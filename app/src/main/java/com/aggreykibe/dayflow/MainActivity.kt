@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         NotificationHelper.ensureChannel(this)
+        NotificationHelper.ensureAlarmChannel(this)
         setContent {
             DayFlowTheme {
                 DayFlowApp(viewModel)

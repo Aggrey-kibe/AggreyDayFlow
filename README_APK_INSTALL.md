@@ -44,6 +44,8 @@ Pick one:
 - Allow **notifications** when asked. If you tapped "Don't allow", use the button on the app's home screen to open the setting.
 - If the home screen shows **Allow exact alarms**, tap it and switch on "Alarms and reminders". Without it, reminders can arrive a few minutes late.
 - Some phones (Xiaomi, Tecno, Infinix, Oppo, Vivo, Samsung) stop apps in the background to save battery. If a reminder does not ring, set the app's battery usage to **Unrestricted** and turn on **Autostart** if your phone has it.
+- If the home screen shows **Allow full-screen alerts**, tap it. This lets the big alarm screen open over a locked phone.
+- The alarm uses your phone's **alarm volume**. Turn it up in Settings > Sound.
 - Test it: add a reminder for 2 minutes from now, then close the app. A notification should appear.
 
 ## Sharing with a friend

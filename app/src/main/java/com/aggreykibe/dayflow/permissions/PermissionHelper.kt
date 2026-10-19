@@ -22,6 +22,18 @@ object PermissionHelper {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
 
+    /** Android 14+ lets the user block full-screen alerts; older versions always allow them. */
+    fun fullScreenAlertsAllowed(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+            context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
+
+    fun openFullScreenSettings(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
+        val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:${context.packageName}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        launchSafely(context, intent)
+    }
+
     fun openNotificationSettings(context: Context) {
         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

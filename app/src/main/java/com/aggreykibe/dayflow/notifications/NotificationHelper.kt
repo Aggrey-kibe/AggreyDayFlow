@@ -15,6 +15,7 @@ import java.time.format.FormatStyle
 
 object NotificationHelper {
     const val CHANNEL_ID = "reminders"
+    const val ALARM_CHANNEL_ID = "alarms"
 
     /** Safe to call repeatedly; Android ignores an existing channel with the same id. */
     fun ensureChannel(context: Context) {
@@ -23,6 +24,20 @@ object NotificationHelper {
             context.getString(R.string.channel_name),
             NotificationManager.IMPORTANCE_HIGH,
         ).apply { description = context.getString(R.string.channel_description) }
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    /** Channel for the ringing alarm. The alarm service plays the sound itself, so the channel is silent. */
+    fun ensureAlarmChannel(context: Context) {
+        val channel = NotificationChannel(
+            ALARM_CHANNEL_ID,
+            context.getString(R.string.alarm_channel_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = context.getString(R.string.alarm_channel_description)
+            setSound(null, null)
+            enableVibration(false)
+        }
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
