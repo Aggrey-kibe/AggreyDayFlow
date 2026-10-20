@@ -3,13 +3,11 @@ package com.aggreykibe.dayflow.ui.editor
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,17 +32,22 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.aggreykibe.dayflow.R
+import com.aggreykibe.dayflow.domain.AppSettings
+import com.aggreykibe.dayflow.domain.Category
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.domain.Repeat
+import com.aggreykibe.dayflow.domain.RingStyle
+import com.aggreykibe.dayflow.ui.components.AlarmOptions
+import com.aggreykibe.dayflow.ui.components.ChipChoice
+import com.aggreykibe.dayflow.ui.components.RadioRow
+import com.aggreykibe.dayflow.ui.components.categoryLabel
 import com.aggreykibe.dayflow.ui.theme.Spacing
 import java.time.Instant
 import java.time.LocalDate
@@ -54,15 +56,18 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * Create ([initial] == null) or edit a reminder. Field values survive screen rotation.
- * [onDelete] is null when creating, so no Delete button is shown.
+ * New reminders start from the person's saved [defaults]. [onDelete] is null when creating.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditorScreen(
     initial: Reminder?,
+    defaults: AppSettings,
     defaultDay: LocalDate,
     now: LocalDateTime,
     onSave: (Reminder) -> Unit,
@@ -71,11 +76,20 @@ fun EditorScreen(
     modifier: Modifier = Modifier,
 ) {
     val suggested = now.plusHours(1).withMinute(0).withSecond(0).withNano(0)
-    var title by rememberSaveable { mutableStateOf(initial?.title ?: "") }
     val initialDate = initial?.date ?: if (defaultDay <= now.toLocalDate()) suggested.toLocalDate() else defaultDay
+
+    var title by rememberSaveable { mutableStateOf(initial?.title ?: "") }
+    var message by rememberSaveable { mutableStateOf(initial?.message ?: "") }
     var epochDay by rememberSaveable { mutableLongStateOf(initialDate.toEpochDay()) }
     var minuteOfDay by rememberSaveable { mutableIntStateOf((initial?.time ?: suggested.toLocalTime()).let { it.hour * 60 + it.minute }) }
-    var daily by rememberSaveable { mutableStateOf(initial?.repeat == Repeat.DAILY) }
+    var repeat by rememberSaveable { mutableStateOf(initial?.repeat ?: Repeat.ONCE) }
+    var category by rememberSaveable { mutableStateOf(initial?.category ?: Category.PERSONAL) }
+    var ringStyle by rememberSaveable { mutableStateOf(initial?.ringStyle ?: defaults.ringStyle) }
+    var vibrate by rememberSaveable { mutableStateOf(initial?.vibrate ?: defaults.vibrate) }
+    var snoozeMinutes by rememberSaveable { mutableIntStateOf(initial?.snoozeMinutes ?: defaults.snoozeMinutes) }
+    var ringSeconds by rememberSaveable { mutableIntStateOf(initial?.ringSeconds ?: defaults.ringSeconds) }
+    var soundId by rememberSaveable { mutableStateOf(initial?.soundId ?: defaults.soundId) }
+    var showMore by rememberSaveable { mutableStateOf(false) }
     var triedToSave by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
@@ -83,7 +97,6 @@ fun EditorScreen(
 
     val date = LocalDate.ofEpochDay(epochDay)
     val time = LocalTime.of(minuteOfDay / 60, minuteOfDay % 60)
-    val repeat = if (daily) Repeat.DAILY else Repeat.ONCE
 
     val titleBlank = title.isBlank()
     val unchanged = initial != null && initial.repeat == Repeat.ONCE && initial.date == date && initial.time == time
@@ -119,6 +132,16 @@ fun EditorScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            OutlinedTextField(
+                value = message,
+                onValueChange = { message = it.take(MAX_MESSAGE) },
+                label = { Text(stringResource(R.string.field_message)) },
+                minLines = 2,
+                maxLines = 6,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             val dateLabel = date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
             val timeLabel = time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
             OutlinedButton(
@@ -126,7 +149,7 @@ fun EditorScreen(
                 modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.minTouchTarget),
             ) {
                 Text(
-                    stringResource(if (daily) R.string.field_starts else R.string.field_date, dateLabel),
+                    stringResource(if (repeat == Repeat.ONCE) R.string.field_date else R.string.field_starts, dateLabel),
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
@@ -137,10 +160,44 @@ fun EditorScreen(
                 Text(stringResource(R.string.field_time, timeLabel), style = MaterialTheme.typography.labelLarge)
             }
 
+            val weekday = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
             Column(Modifier.selectableGroup()) {
                 Text(stringResource(R.string.field_repeat), style = MaterialTheme.typography.titleMedium)
-                RepeatOption(stringResource(R.string.repeat_once), selected = !daily) { daily = false }
-                RepeatOption(stringResource(R.string.repeat_daily), selected = daily) { daily = true }
+                RadioRow(stringResource(R.string.repeat_once), repeat == Repeat.ONCE) { repeat = Repeat.ONCE }
+                RadioRow(stringResource(R.string.repeat_daily), repeat == Repeat.DAILY) { repeat = Repeat.DAILY }
+                RadioRow(stringResource(R.string.repeat_weekly, weekday), repeat == Repeat.WEEKLY) { repeat = Repeat.WEEKLY }
+            }
+
+            TextButton(
+                onClick = { showMore = !showMore },
+                modifier = Modifier.heightIn(min = Spacing.minTouchTarget),
+            ) {
+                Text(
+                    stringResource(if (showMore) R.string.fewer_options else R.string.more_options),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+
+            if (showMore) {
+                ChipChoice(
+                    label = stringResource(R.string.field_category),
+                    options = Category.values().toList(),
+                    selected = category,
+                    optionText = { categoryLabel(it) },
+                    onSelect = { category = it },
+                )
+                AlarmOptions(
+                    ringStyle = ringStyle,
+                    onRingStyle = { ringStyle = it },
+                    soundId = soundId,
+                    onSoundId = { soundId = it },
+                    vibrate = vibrate,
+                    onVibrate = { vibrate = it },
+                    snoozeMinutes = snoozeMinutes,
+                    onSnoozeMinutes = { snoozeMinutes = it },
+                    ringSeconds = ringSeconds,
+                    onRingSeconds = { ringSeconds = it },
+                )
             }
 
             if (pastError) {
@@ -156,7 +213,21 @@ fun EditorScreen(
                     triedToSave = true
                     if (!titleBlank && !inPast) {
                         val base = initial ?: Reminder(id = 0L, title = "", date = date, time = time)
-                        onSave(base.copy(title = title.trim(), date = date, time = time, repeat = repeat))
+                        onSave(
+                            base.copy(
+                                title = title.trim(),
+                                message = message.trim(),
+                                date = date,
+                                time = time,
+                                repeat = repeat,
+                                category = category,
+                                ringStyle = ringStyle,
+                                vibrate = vibrate,
+                                snoozeMinutes = snoozeMinutes,
+                                ringSeconds = ringSeconds,
+                                soundId = soundId,
+                            ),
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.minTouchTarget),
@@ -243,18 +314,5 @@ fun EditorScreen(
     }
 }
 
-@Composable
-private fun RepeatOption(label: String, selected: Boolean, onSelect: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = Spacing.minTouchTarget)
-            .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton),
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = Spacing.sm))
-    }
-}
-
 private const val MAX_TITLE = 100
+private const val MAX_MESSAGE = 500

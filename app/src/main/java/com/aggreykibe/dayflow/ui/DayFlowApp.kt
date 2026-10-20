@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.aggreykibe.dayflow.permissions.PermissionHelper
 import com.aggreykibe.dayflow.ui.dashboard.DashboardScreen
 import com.aggreykibe.dayflow.ui.editor.EditorScreen
+import com.aggreykibe.dayflow.ui.settings.SettingsScreen
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,6 +34,7 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
     var editorOpen by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableLongStateOf(0L) } // 0 = a new reminder
     var askedForNotifications by rememberSaveable { mutableStateOf(false) }
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
 
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         viewModel.onPermissionStateMayHaveChanged()
@@ -59,10 +61,12 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
     val showEditor = editorOpen && (editingId == 0L || editing != null)
 
     BackHandler(enabled = showEditor) { editorOpen = false }
+    BackHandler(enabled = settingsOpen && !showEditor) { settingsOpen = false }
 
     if (showEditor) {
         EditorScreen(
             initial = editing,
+            defaults = viewModel.settings,
             defaultDay = maxOf(viewModel.selectedDay, LocalDate.now()),
             now = now,
             onSave = { reminder ->
@@ -83,6 +87,19 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
                 }
             },
             onCancel = { editorOpen = false },
+        )
+    } else if (settingsOpen) {
+        SettingsScreen(
+            settings = viewModel.settings,
+            onSettingsChange = viewModel::updateSettings,
+            notificationsOk = notificationsOk,
+            exactAlarmsOk = exactOk,
+            fullScreenOk = fullScreenOk,
+            onFixNotifications = { requestNotificationsOrOpenSettings() },
+            onFixExactAlarms = { PermissionHelper.openExactAlarmSettings(context) },
+            onFixFullScreen = { PermissionHelper.openFullScreenSettings(context) },
+            onOpenBatterySettings = { PermissionHelper.openBatterySettings(context) },
+            onBack = { settingsOpen = false },
         )
     } else {
         DashboardScreen(
@@ -105,6 +122,7 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
             onFixNotifications = { requestNotificationsOrOpenSettings() },
             onFixExactAlarms = { PermissionHelper.openExactAlarmSettings(context) },
             onFixFullScreen = { PermissionHelper.openFullScreenSettings(context) },
+            onOpenSettings = { settingsOpen = true },
         )
     }
 }

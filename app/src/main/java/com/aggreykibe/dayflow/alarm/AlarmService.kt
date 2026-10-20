@@ -8,9 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.RingtoneManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -19,6 +16,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import com.aggreykibe.dayflow.R
 import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.data.SettingsStore
+import com.aggreykibe.dayflow.domain.DEFAULT_SNOOZE_MINUTES
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.notifications.NotificationHelper
 import com.aggreykibe.dayflow.scheduling.ReminderScheduler
@@ -28,12 +27,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /**
- * Rings the alarm: loops the phone's alarm sound and vibrates until the person taps Done, Snooze or Stop,
- * or until [TIMEOUT_MS] passes. Shows a full-screen alert when the phone is locked or idle.
+ * Rings the alarm using the reminder's own options (sound, vibration, ring time, snooze length) until the
+ * person taps Dismiss, Snooze or Done, or until the ring time runs out. Shows a full-screen alert when the
+ * phone is locked or idle. Only one alarm rings at a time; a new one replaces the old one.
  */
 class AlarmService : Service() {
     private val handler = Handler(Looper.getMainLooper())
-    private var player: MediaPlayer? = null
+    private val sound by lazy { SoundPlayer(this) }
     private var vibrator: Vibrator? = null
     private var currentId: Long = -1L
     private val timeout = Runnable { onTimeout() }
@@ -49,7 +49,8 @@ class AlarmService : Service() {
                 stopRinging()
             }
             ACTION_SNOOZE -> {
-                ReminderScheduler(this).snooze(id, SNOOZE_MINUTES)
+                val minutes = findReminder(id)?.snoozeMinutes ?: DEFAULT_SNOOZE_MINUTES
+                ReminderScheduler(this).snooze(id, minutes) // replaces any earlier snooze: never more than one
                 cancelPlainNotification(id)
                 stopRinging()
             }
@@ -58,8 +59,10 @@ class AlarmService : Service() {
         return START_NOT_STICKY
     }
 
+    private fun findReminder(id: Long): Reminder? = ReminderStore(this).load().firstOrNull { it.id == id }
+
     private fun startRinging(id: Long) {
-        val reminder = ReminderStore(this).load().firstOrNull { it.id == id }
+        val reminder = findReminder(id)
         NotificationHelper.ensureAlarmChannel(this)
         try {
             val notification = buildNotification(reminder, id)
@@ -80,14 +83,16 @@ class AlarmService : Service() {
         }
         currentId = id
         stopSoundAndVibration() // in case a second alarm replaces one that is still ringing
-        startSound()
-        startVibration()
+        sound.start(reminder.soundId, loop = true, gradual = SettingsStore(this).load().gradualVolume)
+        if (reminder.vibrate) startVibration()
         handler.removeCallbacks(timeout)
-        handler.postDelayed(timeout, TIMEOUT_MS)
+        handler.postDelayed(timeout, reminder.ringSeconds * 1000L)
     }
 
     private fun buildNotification(reminder: Reminder?, id: Long): Notification {
         val timeText = reminder?.time?.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)).orEmpty()
+        val message = reminder?.message.orEmpty()
+        val snoozeMinutes = reminder?.snoozeMinutes ?: DEFAULT_SNOOZE_MINUTES
         val openAlarm = PendingIntent.getActivity(
             this,
             REQUEST_OPEN,
@@ -95,9 +100,9 @@ class AlarmService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val icon = Icon.createWithResource(this, R.drawable.ic_notification)
-        fun action(label: Int, action: String, request: Int) = Notification.Action.Builder(
+        fun action(label: String, action: String, request: Int) = Notification.Action.Builder(
             icon,
-            getString(label),
+            label,
             PendingIntent.getService(
                 this,
                 request,
@@ -106,41 +111,20 @@ class AlarmService : Service() {
             ),
         ).build()
 
-        return Notification.Builder(this, NotificationHelper.ALARM_CHANNEL_ID)
+        val builder = Notification.Builder(this, NotificationHelper.ALARM_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(reminder?.title ?: getString(R.string.app_name))
-            .setContentText(timeText)
+            .setContentText(message.ifBlank { timeText })
+            .setSubText(timeText)
             .setCategory(Notification.CATEGORY_ALARM)
             .setContentIntent(openAlarm)
             .setFullScreenIntent(openAlarm, true)
             .setOngoing(true)
-            .addAction(action(R.string.alarm_done, ACTION_DONE, REQUEST_DONE))
-            .addAction(action(R.string.alarm_snooze, ACTION_SNOOZE, REQUEST_SNOOZE))
-            .addAction(action(R.string.alarm_stop, ACTION_STOP, REQUEST_STOP))
-            .build()
-    }
-
-    private fun startSound() {
-        val uri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        try {
-            player = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build(),
-                )
-                setDataSource(this@AlarmService, uri)
-                isLooping = true
-                prepare()
-                start()
-            }
-        } catch (e: Exception) {
-            player?.release()
-            player = null
-        }
+            .addAction(action(getString(R.string.alarm_dismiss), ACTION_STOP, REQUEST_STOP))
+            .addAction(action(getString(R.string.alarm_snooze_minutes, snoozeMinutes), ACTION_SNOOZE, REQUEST_SNOOZE))
+            .addAction(action(getString(R.string.alarm_done), ACTION_DONE, REQUEST_DONE))
+        if (message.isNotBlank()) builder.setStyle(Notification.BigTextStyle().bigText(message))
+        return builder.build()
     }
 
     @Suppress("DEPRECATION")
@@ -151,9 +135,7 @@ class AlarmService : Service() {
     }
 
     private fun stopSoundAndVibration() {
-        try { player?.stop() } catch (e: IllegalStateException) { /* already stopped */ }
-        player?.release()
-        player = null
+        sound.stop()
         vibrator?.cancel()
         vibrator = null
     }
@@ -177,7 +159,7 @@ class AlarmService : Service() {
 
     /** Nobody answered: leave a normal notification behind so the reminder is not lost, then go quiet. */
     private fun onTimeout() {
-        ReminderStore(this).load().firstOrNull { it.id == currentId }?.let { NotificationHelper.show(this, it) }
+        findReminder(currentId)?.let { NotificationHelper.show(this, it) }
         stopRinging()
     }
 
@@ -201,8 +183,6 @@ class AlarmService : Service() {
         const val ACTION_DONE = "com.aggreykibe.dayflow.action.DONE"
         const val ACTION_SNOOZE = "com.aggreykibe.dayflow.action.SNOOZE"
         const val ACTION_ALARM_STOPPED = "com.aggreykibe.dayflow.action.ALARM_STOPPED"
-        const val SNOOZE_MINUTES = 10
-        private const val TIMEOUT_MS = 2 * 60 * 1000L
         private const val NOTIFICATION_ID = 1_000_000
         private const val REQUEST_OPEN = 1
         private const val REQUEST_DONE = 2

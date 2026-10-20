@@ -51,15 +51,17 @@ object NotificationHelper {
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val notification = Notification.Builder(context, CHANNEL_ID)
+        val timeText = reminder.time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
+        val builder = Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(reminder.title)
-            .setContentText(reminder.time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)))
+            .setContentText(reminder.message.ifBlank { timeText })
+            .setSubText(timeText)
             .setCategory(Notification.CATEGORY_REMINDER)
             .setContentIntent(open)
             .setAutoCancel(true)
-            .build()
-        context.getSystemService(NotificationManager::class.java).notify(reminder.id.toInt(), notification)
+        if (reminder.message.isNotBlank()) builder.setStyle(Notification.BigTextStyle().bigText(reminder.message))
+        context.getSystemService(NotificationManager::class.java).notify(reminder.id.toInt(), builder.build())
         return true
     }
 }

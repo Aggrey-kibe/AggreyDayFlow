@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.aggreykibe.dayflow.alarm.AlarmService
 import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.domain.RingStyle
 import com.aggreykibe.dayflow.notifications.NotificationHelper
 import java.time.LocalDateTime
 
@@ -16,9 +17,10 @@ class ReminderReceiver : BroadcastReceiver() {
         val reminder = ReminderStore(context).load().firstOrNull { it.id == id } ?: return
         val now = LocalDateTime.now()
         if (!reminder.isCompletedOn(now.toLocalDate())) {
-            // Android may refuse to start the ringing service (for example with only an inexact alarm).
-            // In that case the person still gets a normal notification, never silence.
-            if (!AlarmService.tryStart(context, id)) {
+            // A "quiet notification" reminder never rings. An alarm reminder rings, but Android may refuse to
+            // start the ringing service (for example with only an inexact alarm); the person then still
+            // gets a normal notification, never silence.
+            if (reminder.ringStyle == RingStyle.NOTIFICATION || !AlarmService.tryStart(context, id)) {
                 NotificationHelper.show(context, reminder)
             }
         }

@@ -2,7 +2,7 @@
 
 Offline-first reminder and daily planning app for Android. No account, no backend, no tracking.
 
-**Status:** MVP. Reminders, daily timetable, completion, local storage, notifications, an alarm-style ringing screen with Done/Snooze/Stop, and boot re-arming are implemented.
+**Status:** Active development. Reminders with messages, one-time/daily/weekly repeats, a daily timetable, local storage, alarm-style ringing with a full-screen alert (Dismiss / Snooze / Done), per-reminder sound and vibration options, a Settings screen and boot re-arming are implemented. See `docs/STATUS.md` for exactly what has been verified on a phone.
 Parts have been tested and parts have not: see `docs/STATUS.md` for the exact list. To get an APK, see `README_APK_INSTALL.md`.
 
 ## Identity

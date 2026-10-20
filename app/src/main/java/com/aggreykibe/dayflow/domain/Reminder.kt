@@ -4,11 +4,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-enum class Repeat { ONCE, DAILY }
-
 /**
- * A reminder. For [Repeat.ONCE], [date] is the day it fires. For [Repeat.DAILY], [date] is the first
- * day it applies to. [completedDates] records which days the person ticked it off, for both kinds.
+ * A reminder. For [Repeat.ONCE], [date] is the day it fires. For DAILY and WEEKLY, [date] is the first
+ * day it applies to. [completedDates] records which days the person ticked it off, for every kind.
+ * [message] is the optional longer text shown on the alarm screen.
  */
 data class Reminder(
     val id: Long,
@@ -17,10 +16,18 @@ data class Reminder(
     val time: LocalTime,
     val repeat: Repeat = Repeat.ONCE,
     val completedDates: Set<LocalDate> = emptySet(),
+    val message: String = "",
+    val category: Category = Category.PERSONAL,
+    val ringStyle: RingStyle = RingStyle.ALARM,
+    val vibrate: Boolean = true,
+    val snoozeMinutes: Int = DEFAULT_SNOOZE_MINUTES,
+    val ringSeconds: Int = DEFAULT_RING_SECONDS,
+    val soundId: String = SoundIds.SYSTEM,
 ) {
     fun occursOn(day: LocalDate): Boolean = when (repeat) {
         Repeat.ONCE -> day == date
         Repeat.DAILY -> !day.isBefore(date)
+        Repeat.WEEKLY -> !day.isBefore(date) && day.dayOfWeek == date.dayOfWeek
     }
 
     fun isCompletedOn(day: LocalDate): Boolean = day in completedDates
@@ -32,7 +39,7 @@ data class Reminder(
 /** The next moment this reminder should notify, strictly after [now]; null if none remains. Completed days are skipped. */
 fun nextTrigger(reminder: Reminder, now: LocalDateTime): LocalDateTime? {
     var day = maxOf(reminder.date, now.toLocalDate())
-    // Daily reminders skip days already completed. The bound (about ten years) keeps this loop finite.
+    // Repeating reminders skip days already completed. The bound (about ten years) keeps this loop finite.
     repeat(MAX_LOOKAHEAD_DAYS) {
         if (reminder.occursOn(day) && !reminder.isCompletedOn(day)) {
             val at = day.atTime(reminder.time)

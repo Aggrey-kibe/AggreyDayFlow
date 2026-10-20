@@ -34,6 +34,11 @@ object PermissionHelper {
         launchSafely(context, intent)
     }
 
+    /** Opens Android's battery-optimisation list, where the app can be set to "Unrestricted". */
+    fun openBatterySettings(context: Context) {
+        launchSafely(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
     fun openNotificationSettings(context: Context) {
         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

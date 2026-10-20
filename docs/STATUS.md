@@ -12,14 +12,24 @@
 - Accessibility: 48dp touch targets, text in sp, headings and checkbox descriptions for screen readers, selectable radio rows, dark theme.
 
 ## Actually verified (in the build sandbox, 2026-10)
-- 30 JUnit tests pass (`GreetingTest` 5, `ReminderLogicTest` 21, `ReminderCodecTest` 4), compiled with Kotlin 2.0.20 and run on JUnit 4.13.2. They cover next-trigger rules, sorting, completion, progress counts and the storage format round trip.
+- 39 JUnit tests pass (`GreetingTest` 5, `ReminderLogicTest` 27, `ReminderCodecTest` 7), compiled with Kotlin 2.0.20 and run on JUnit 4.13.2. They cover next-trigger rules including weekly repeat, sorting, completion, progress counts, the storage round trip, loading old saved data, and safe handling of invalid stored values.
 - The framework-only layer (storage, permissions, notifications, scheduler, both receivers) compiles with no errors against the real Android API 34 `android.jar` (with a stand-in for the generated `R` class).
 - Compose files parse with no syntax errors; resource and string references were cross-checked (47 strings, all defined, argument counts match).
 - Gradle wrapper files (`gradlew`, `gradlew.bat`, `gradle-wrapper.jar`) added from the official Gradle 8.9.0 tag. The old `gradle-wrapper.properties` was in the wrong folder; it now lives in `gradle/wrapper/`.
 
 ## Confirmed on a real phone (by the owner)
-- The project builds on GitHub Actions (run #1, green) and the resulting debug APK installs.
+- The project builds on GitHub Actions (runs #1 and #2, green) and the debug APK installs.
 - Reminders work and a notification arrives at the scheduled time.
+- Alarm mode (build #2) rings with an alarm sound.
+
+## Stage 2 (this update): written, not yet confirmed on a phone
+- Reminders now have an optional **message** (shown in the notification and on the alarm screen), a **category**, and **weekly** repeat.
+- Per-reminder alarm options under "More options": ring like an alarm or quiet notification, sound (phone alarm sound plus four built-in offline sounds), vibration on/off, snooze length (5/10/15/30 min), ring duration (30 s to 5 min), with a sound sample button.
+- **Settings screen**: defaults for all of the above, optional "start quietly and get louder", and plain-language status for notification, exact-alarm and full-screen permissions with fix buttons and a battery-settings shortcut.
+- Alarm screen redesigned: live clock, scheduled time, message card, Dismiss / Snooze N min / Mark as done, glow animation that is switched off when the phone's animations are disabled.
+- Data upgrade is backward compatible: reminders saved by earlier versions load with defaults (covered by a unit test).
+- The four sounds are original synthesized tones generated for this project (no third-party audio).
+- Not yet built from the master plan: themes and colors, per-category colors, backup/restore, search, first-run setup (planned for later stages).
 
 ## NOT verified (needs Android Studio / a phone)
 - Alarm mode (sound, vibration, full-screen alert over the lock screen, Done/Snooze/Stop buttons) is new and has not been run on a phone yet. Its framework code compiles against Android API 34; the Compose alert screen is compiled by the GitHub build.
@@ -32,7 +42,7 @@
 
 ## Known limitations
 - Reminders that were due while the phone was off are not replayed after reboot.
-- No weekly/custom repeats, no backup/export. Snooze is fixed at 10 minutes.
+- No custom repeat patterns, no backup/export. Snooze choices are 5, 10, 15 or 30 minutes.
 - The alarm uses the phone's alarm volume. If that volume is at zero, only vibration and the screen alert will be noticed.
 - On Android 14+ the user can block full-screen alerts; the app shows a button to re-enable them. While the phone is in use, Android shows a banner instead of taking over the screen (the sound still rings).
 - Uses `SCHEDULE_EXACT_ALARM` (user-controlled on Android 12+). Chosen over `USE_EXACT_ALARM` because Google Play restricts the latter to alarm-clock/calendar apps.

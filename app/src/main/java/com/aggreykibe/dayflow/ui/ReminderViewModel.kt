@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.data.SettingsStore
+import com.aggreykibe.dayflow.domain.AppSettings
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.scheduling.ReminderScheduler
 import java.time.LocalDate
@@ -14,11 +16,14 @@ import java.time.LocalDate
 /** Single source of truth for the UI. Every change is saved first, then the alarms are brought in line. */
 class ReminderViewModel(app: Application) : AndroidViewModel(app) {
     private val store = ReminderStore(app)
+    private val settingsStore = SettingsStore(app)
     private val scheduler = ReminderScheduler(app)
 
     var reminders by mutableStateOf(store.load())
         private set
     var selectedDay by mutableStateOf(LocalDate.now())
+        private set
+    var settings by mutableStateOf(settingsStore.load())
         private set
 
     /** Bumped when outside state (permissions) may have changed, so the UI re-reads it. */
@@ -34,6 +39,11 @@ class ReminderViewModel(app: Application) : AndroidViewModel(app) {
 
     fun onPermissionStateMayHaveChanged() {
         statusTick++
+    }
+
+    fun updateSettings(updated: AppSettings) {
+        settingsStore.save(updated)
+        settings = updated
     }
 
     fun selectDay(day: LocalDate) {

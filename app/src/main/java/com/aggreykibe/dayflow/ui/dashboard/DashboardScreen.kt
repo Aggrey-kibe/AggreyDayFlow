@@ -12,12 +12,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -30,6 +32,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.aggreykibe.dayflow.R
@@ -66,6 +69,7 @@ fun DashboardScreen(
     onFixNotifications: () -> Unit,
     onFixExactAlarms: () -> Unit,
     onFixFullScreen: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val today = now.toLocalDate()
@@ -113,7 +117,12 @@ fun DashboardScreen(
                 .padding(bottom = FabClearance),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            Text(stringResource(greeting), style = MaterialTheme.typography.headlineLarge)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(greeting), style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title))
+                }
+            }
             Text("$dateText · $timeText", style = MaterialTheme.typography.bodyLarge)
 
             if (!notificationsOk) {
@@ -233,9 +242,16 @@ private fun TimelineRow(
             )
             val detail = buildString {
                 append(timeText)
-                if (reminder.repeat == Repeat.DAILY) append(" · ").append(stringResource(R.string.repeat_daily_short))
+                when (reminder.repeat) {
+                    Repeat.DAILY -> append(" · ").append(stringResource(R.string.repeat_daily_short))
+                    Repeat.WEEKLY -> append(" · ").append(stringResource(R.string.repeat_weekly_short))
+                    Repeat.ONCE -> Unit
+                }
             }
             Text(detail, style = MaterialTheme.typography.bodyMedium)
+            if (reminder.message.isNotBlank()) {
+                Text(reminder.message, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
             if (done) {
                 Text(stringResource(R.string.status_done), style = MaterialTheme.typography.bodyMedium)
             } else if (missed) {
@@ -301,7 +317,7 @@ private fun DashboardPreview() {
             reminders = sample, selectedDay = today, now = today.atTime(12, 0),
             notificationsOk = true, exactAlarmsOk = true, fullScreenOk = true,
             onSelectDay = {}, onAdd = {}, onEdit = {}, onToggleDone = { _, _ -> },
-            onFixNotifications = {}, onFixExactAlarms = {}, onFixFullScreen = {},
+            onFixNotifications = {}, onFixExactAlarms = {}, onFixFullScreen = {}, onOpenSettings = {},
         )
     }
 }

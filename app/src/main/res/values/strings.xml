@@ -23,7 +23,6 @@
     <string name="when_on">%1$s at %2$s</string>
     <string name="status_done">Done</string>
     <string name="status_missed">Missed</string>
-    <string name="repeat_daily_short">Every day</string>
     <string name="mark_done_description">Mark %1$s as done</string>
     <string name="edit_reminder">Edit reminder</string>
 
@@ -53,9 +52,59 @@
     <string name="delete_confirm_body">\"%1$s\" will be removed and will not alert you again.</string>
 
     <!-- Alarm screen and notification -->
+    <string name="alarm_dismiss">Dismiss</string>
+    <string name="alarm_snooze_minutes">Snooze %1$d min</string>
+    <string name="alarm_mark_done">Mark as done</string>
+    <string name="alarm_scheduled_for">Scheduled for %1$s</string>
+    <string name="alarm_kind_weekly">Weekly reminder</string>
+    <string name="repeat_daily_short">Every day</string>
+    <string name="repeat_weekly_short">Every week</string>
+    <string name="repeat_weekly">Every week (%1$s)</string>
+
+    <!-- Editor: extra fields -->
+    <string name="field_message">Message (optional)</string>
+    <string name="more_options">More options</string>
+    <string name="fewer_options">Fewer options</string>
+    <string name="field_category">Category</string>
+    <string name="field_sound">Alarm sound</string>
+    <string name="sound_play_sample">Play sample</string>
+    <string name="sound_stop_sample">Stop sample</string>
+    <string name="field_ring_style">How should it alert you?</string>
+    <string name="ring_style_alarm">Ring like an alarm</string>
+    <string name="ring_style_notification">Quiet notification only</string>
+    <string name="field_vibrate">Vibrate</string>
+    <string name="field_snooze">Snooze length</string>
+    <string name="field_ring_duration">Ring for</string>
+    <string name="field_gradual">Start quietly and get louder</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_seconds">%1$d sec</string>
+    <string name="sound_system">Phone alarm sound</string>
+    <string name="sound_chime">Gentle chime</string>
+    <string name="sound_bells">Soft bells</string>
+    <string name="sound_beep">Classic beep</string>
+    <string name="sound_rising">Rising alert</string>
+    <string name="category_personal">Personal</string>
+    <string name="category_work">Work</string>
+    <string name="category_school">School</string>
+    <string name="category_family">Family</string>
+    <string name="category_exercise">Exercise</string>
+    <string name="category_appointment">Appointment</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_alarm_defaults">Alarm defaults</string>
+    <string name="settings_alarm_defaults_hint">These pre-fill every new reminder. You can still change them for each reminder.</string>
+    <string name="settings_permissions">Permissions and reliability</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_exact">Exact alarms</string>
+    <string name="perm_fullscreen">Full-screen alerts</string>
+    <string name="status_on">On</string>
+    <string name="status_off">Off</string>
+    <string name="perm_battery_tip">Some phones stop apps in the background to save battery. If an alarm is late or silent, set this app\'s battery use to Unrestricted.</string>
+    <string name="perm_battery_action">Open battery settings</string>
+    <string name="action_back">Back</string>
+
     <string name="alarm_done">Done</string>
-    <string name="alarm_snooze">Snooze 10 min</string>
-    <string name="alarm_stop">Stop</string>
     <string name="alarm_kind_once">Reminder</string>
     <string name="alarm_kind_daily">Daily reminder</string>
     <string name="alarm_channel_name">Ringing alarms</string>

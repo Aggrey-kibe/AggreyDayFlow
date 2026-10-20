@@ -131,4 +131,38 @@ class ReminderLogicTest {
     @Test fun progressEmptyDay() {
         assertEquals(DayProgress(0, 0, 0), progressFor(emptyList(), mon, mon.atTime(9, 0)))
     }
+
+    // --- weekly
+    private fun weekly(id: Long, start: LocalDate, h: Int, done: Set<LocalDate> = emptySet()) =
+        Reminder(id, "w$id", start, LocalTime.of(h, 0), Repeat.WEEKLY, done)
+
+    @Test fun weeklyOccursOnlyOnSameWeekdayFromStart() {
+        val r = weekly(1, mon, 9)
+        assertTrue(r.occursOn(mon)); assertTrue(r.occursOn(mon.plusDays(7))); assertTrue(r.occursOn(mon.plusDays(70)))
+        assertFalse(r.occursOn(tue)); assertFalse(r.occursOn(mon.plusDays(6))); assertFalse(r.occursOn(mon.minusDays(7)))
+    }
+
+    @Test fun weeklyPassedTodayTriggersNextWeek() {
+        assertEquals(mon.plusDays(7).atTime(8, 0), nextTrigger(weekly(1, mon, 8), mon.atTime(9, 0)))
+    }
+
+    @Test fun weeklyLaterTodayTriggersToday() {
+        assertEquals(mon.atTime(18, 0), nextTrigger(weekly(1, mon, 18), mon.atTime(9, 0)))
+    }
+
+    @Test fun weeklyCompletedSkipsToFollowingWeek() {
+        val r = weekly(1, mon, 18, done = setOf(mon))
+        assertEquals(mon.plusDays(7).atTime(18, 0), nextTrigger(r, mon.atTime(9, 0)))
+    }
+
+    @Test fun weeklyStartingInFutureWaitsForStart() {
+        val start = mon.plusDays(10)
+        assertEquals(start.atTime(7, 0), nextTrigger(weekly(1, start, 7), mon.atTime(9, 0)))
+    }
+
+    @Test fun weeklyAppearsInDayListOnlyOnItsWeekday() {
+        val list = listOf(weekly(1, mon, 8))
+        assertEquals(listOf(1L), remindersForDay(list, mon.plusDays(14)).map { it.id })
+        assertEquals(emptyList<Long>(), remindersForDay(list, tue).map { it.id })
+    }
 }
