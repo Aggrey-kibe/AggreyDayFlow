@@ -125,6 +125,7 @@
     <string name="perm_notifications">Notifications</string>
     <string name="perm_exact">Exact alarms</string>
     <string name="perm_fullscreen">Full-screen alerts</string>
+    <string name="perm_exact_hint">Ringing alarms work without this. It only makes quiet-notification reminders arrive on the exact minute.</string>
     <string name="status_on">On</string>
     <string name="status_off">Off</string>
     <string name="perm_battery_tip">Some phones stop apps in the background to save battery. If an alarm is late or silent, set this app\'s battery use to Unrestricted.</string>

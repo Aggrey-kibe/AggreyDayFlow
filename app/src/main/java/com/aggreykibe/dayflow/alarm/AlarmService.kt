@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import com.aggreykibe.dayflow.R
@@ -36,6 +37,7 @@ class AlarmService : Service() {
     private val sound by lazy { SoundPlayer(this) }
     private var vibrator: Vibrator? = null
     private var currentId: Long = -1L
+    private var wakeLock: PowerManager.WakeLock? = null
     private val timeout = Runnable { onTimeout() }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -64,6 +66,8 @@ class AlarmService : Service() {
     private fun startRinging(id: Long) {
         val reminder = findReminder(id)
         NotificationHelper.ensureAlarmChannel(this)
+        val previousId = currentId
+        isRinging = true // set before the alert screen can open, so the screen does not start a second ring
         try {
             val notification = buildNotification(reminder, id)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -72,8 +76,10 @@ class AlarmService : Service() {
                 startForeground(NOTIFICATION_ID, notification)
             }
         } catch (e: Exception) {
-            // Could not become a foreground service; fall back to a normal notification.
-            reminder?.let { NotificationHelper.show(this, it) }
+            // Could not become a foreground service. Post a loud notification that opens the alarm screen;
+            // the screen is in the foreground, so it is allowed to start the ring itself.
+            isRinging = false
+            reminder?.let { NotificationHelper.show(this, it, openAlarmScreen = true) }
             stopSelf()
             return
         }
@@ -81,8 +87,14 @@ class AlarmService : Service() {
             stopRinging()
             return
         }
+        if (previousId != -1L && previousId != id) {
+            // A second alarm arrived while the first was still ringing. Keep the first as a notification
+            // so it is not silently lost.
+            findReminder(previousId)?.let { NotificationHelper.show(this, it, openAlarmScreen = false) }
+        }
         currentId = id
         stopSoundAndVibration() // in case a second alarm replaces one that is still ringing
+        acquireWakeLock(reminder.ringSeconds)
         sound.start(reminder.soundId, loop = true, gradual = SettingsStore(this).load().gradualVolume)
         if (reminder.vibrate) startVibration()
         handler.removeCallbacks(timeout)
@@ -159,12 +171,28 @@ class AlarmService : Service() {
 
     /** Nobody answered: leave a normal notification behind so the reminder is not lost, then go quiet. */
     private fun onTimeout() {
-        findReminder(currentId)?.let { NotificationHelper.show(this, it) }
+        findReminder(currentId)?.let { NotificationHelper.show(this, it, openAlarmScreen = false) }
         stopRinging()
     }
 
+    /** Keeps the processor running while the alarm plays with the screen off; always released on stop. */
+    private fun acquireWakeLock(ringSeconds: Int) {
+        releaseWakeLock()
+        val lock = getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DayFlow:ringing")
+        lock.acquire(ringSeconds * 1000L + WAKE_MARGIN_MS) // the timeout means it can never be held forever
+        wakeLock = lock
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
+    }
+
     private fun stopRinging() {
+        isRinging = false
+        currentId = -1L
         handler.removeCallbacks(timeout)
+        releaseWakeLock()
         stopSoundAndVibration()
         stopForeground(STOP_FOREGROUND_REMOVE)
         sendBroadcast(Intent(ACTION_ALARM_STOPPED).setPackage(packageName)) // closes the alarm screen
@@ -172,7 +200,9 @@ class AlarmService : Service() {
     }
 
     override fun onDestroy() {
+        isRinging = false
         handler.removeCallbacks(timeout)
+        releaseWakeLock()
         stopSoundAndVibration()
         super.onDestroy()
     }
@@ -184,6 +214,12 @@ class AlarmService : Service() {
         const val ACTION_SNOOZE = "com.aggreykibe.dayflow.action.SNOOZE"
         const val ACTION_ALARM_STOPPED = "com.aggreykibe.dayflow.action.ALARM_STOPPED"
         private const val NOTIFICATION_ID = 1_000_000
+        private const val WAKE_MARGIN_MS = 15_000L
+
+        /** True while an alarm is ringing. The alarm screen checks it so it never starts a duplicate ring. */
+        @Volatile
+        var isRinging: Boolean = false
+            private set
         private const val REQUEST_OPEN = 1
         private const val REQUEST_DONE = 2
         private const val REQUEST_SNOOZE = 3

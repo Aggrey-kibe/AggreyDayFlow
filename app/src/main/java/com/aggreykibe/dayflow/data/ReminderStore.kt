@@ -6,7 +6,7 @@ import com.aggreykibe.dayflow.domain.ReminderCodec
 
 /** Local-only persistence. Reminders live in app-private storage; nothing leaves the device. */
 class ReminderStore(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs = DeviceStorage.prefs(context, PREFS_NAME)
 
     fun load(): List<Reminder> = ReminderCodec.decode(prefs.getString(KEY, "").orEmpty())
 

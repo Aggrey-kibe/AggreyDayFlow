@@ -39,6 +39,20 @@
 - Status-bar and navigation-bar icons follow the app's chosen mode, not only the phone's.
 - Colors are defined once in `domain/Palettes.kt` (no Compose imports), generated from a table that was checked for WCAG AA contrast.
 
+## Phase 1 (alarm reliability): written, build and phone results pending
+Problems found in the earlier alarm code, and what was changed:
+1. Alarms depended on a permission that sideloaded apps do not get by default on Android 14+, falling back to alarms Android can delay for minutes. **Ringing alarms now use Android's alarm-clock API** (no special permission, not delayed by battery saving).
+2. No wake lock. **A short wake lock covers the start-up, and a timed one is held while ringing.** It always has a timeout, so it cannot be held forever.
+3. No audio focus. **The alarm now asks other apps (music, video) to pause.**
+4. If Android refused to start the ringing service, the person got only a plain notification. **The fallback is now a loud notification that opens the alarm screen, which starts the ring itself.** If the chosen sound cannot be played, a bundled sound is used.
+5. Alarms were only restored after the first unlock following a restart. **Reminders now live in device-protected storage and the boot receiver is direct-boot aware**, so an overnight restart no longer silences the morning alarm. Existing data is moved across automatically the first time the new version runs unlocked.
+6. A snooze was lost on restart. **Snoozes are now saved and re-armed**; only one snooze per reminder can exist.
+7. Manual clock changes were ignored. **They now re-arm the alarms.**
+8. Two alarms due at once: the second silently replaced the first. **The first now stays as a notification.**
+Also: the exact-alarm banner is shown only if quiet-notification reminders exist, because ringing alarms no longer need it.
+Privacy note: because reminders are readable before the first unlock after a restart, they are not protected by the lock-screen PIN at that moment. They stay private to this app.
+Verified here: the whole engine compiles against Android API 34; 49 unit tests pass (including snooze recovery). **Not verified: every row of `docs/ALARM_TESTING.md`. These need your phone.**
+
 ## Verified for Stage A (sandbox)
 - 48 JUnit tests pass. New `PaletteContrastTest` fails the build if any text pair in any of the 14 theme/mode combinations drops below 4.5:1, if outlines or category dots fall below 3:1, or if the alarm screen's white text or action button becomes hard to read. A deliberate bad color was injected once to prove the test catches it.
 - Framework layer compiles against Android API 34. Compose screens have no syntax errors; they are compiled by the GitHub build.

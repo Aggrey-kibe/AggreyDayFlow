@@ -123,6 +123,7 @@ fun SettingsScreen(
             SectionCard(stringResource(R.string.settings_permissions)) {
                 PermissionRow(stringResource(R.string.perm_notifications), notificationsOk, stringResource(R.string.notice_notifications_action), onFixNotifications)
                 PermissionRow(stringResource(R.string.perm_exact), exactAlarmsOk, stringResource(R.string.notice_exact_action), onFixExactAlarms)
+                Text(stringResource(R.string.perm_exact_hint), style = MaterialTheme.typography.bodyMedium)
                 PermissionRow(stringResource(R.string.perm_fullscreen), fullScreenOk, stringResource(R.string.notice_fullscreen_action), onFixFullScreen)
                 Text(stringResource(R.string.perm_battery_tip), style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(

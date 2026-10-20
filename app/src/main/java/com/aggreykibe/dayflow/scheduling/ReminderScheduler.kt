@@ -5,44 +5,80 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.aggreykibe.dayflow.MainActivity
+import com.aggreykibe.dayflow.data.SnoozeStore
 import com.aggreykibe.dayflow.domain.Reminder
+import com.aggreykibe.dayflow.domain.RingStyle
 import com.aggreykibe.dayflow.domain.nextTrigger
+import com.aggreykibe.dayflow.domain.snoozesToRearm
 import com.aggreykibe.dayflow.permissions.PermissionHelper
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 /**
  * Keeps one pending alarm per reminder, always for that reminder's next trigger, plus an optional
- * separate "snooze" alarm. Daily reminders are re-armed by [ReminderReceiver] each time they fire.
- * Without exact-alarm permission it falls back to an inexact alarm, which Android may delay by minutes.
+ * separate "snooze" alarm. Daily and weekly reminders are re-armed by [ReminderReceiver] each time they fire.
+ *
+ * How alarms are armed:
+ *  - Ringing alarms use Android's alarm-clock API (setAlarmClock). It needs no special permission, is exempt
+ *    from battery-saving delays (Doze), and lets the app start its ringing service. Android shows the next
+ *    alarm in the status area, like a normal alarm clock.
+ *  - Quiet-notification reminders use an exact alarm when the person allowed it, otherwise an inexact one
+ *    that Android may delay by minutes.
  */
 class ReminderScheduler(context: Context) {
     private val context = context.applicationContext
     private val alarms = this.context.getSystemService(AlarmManager::class.java)
+    private val snoozes = SnoozeStore(this.context)
 
     fun schedule(reminder: Reminder, now: LocalDateTime = LocalDateTime.now()) {
         cancel(reminder.id)
         val at = nextTrigger(reminder, now) ?: return
         val millis = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val pending = pendingIntent(reminder.id, REMINDER_PATH, create = true) ?: return
-        setAlarm(millis, pending)
+        arm(millis, pending, ringing = reminder.ringStyle == RingStyle.ALARM)
     }
 
     fun cancel(id: Long) = cancelPending(id, REMINDER_PATH)
 
-    /** Rings the reminder again in [minutes]. Independent of the reminder's normal schedule. */
+    /** Rings the reminder again in [minutes]. Replaces any earlier snooze, so there is never more than one. */
     fun snooze(id: Long, minutes: Int) {
+        val millis = System.currentTimeMillis() + minutes * 60_000L
         val pending = pendingIntent(id, SNOOZE_PATH, create = true) ?: return
-        setAlarm(System.currentTimeMillis() + minutes * 60_000L, pending)
+        snoozes.put(id, millis)
+        arm(millis, pending, ringing = true)
     }
 
-    fun cancelSnooze(id: Long) = cancelPending(id, SNOOZE_PATH)
+    /** Cancels a pending snooze and forgets it. */
+    fun cancelSnooze(id: Long) {
+        cancelPending(id, SNOOZE_PATH)
+        snoozes.remove(id)
+    }
 
+    /** Forgets the saved snooze after it has fired (its alarm is already used up). */
+    fun forgetSnooze(id: Long) = snoozes.remove(id)
+
+    /** Re-arms every reminder and every snooze that is still in the future. Safe to call repeatedly. */
     fun rescheduleAll(reminders: List<Reminder>, now: LocalDateTime = LocalDateTime.now()) {
         reminders.forEach { schedule(it, now) }
+        rearmSnoozes(reminders.map { it.id }.toSet())
     }
 
-    private fun setAlarm(millis: Long, pending: PendingIntent) {
+    private fun rearmSnoozes(existingIds: Set<Long>) {
+        val saved = snoozes.all()
+        val live = snoozesToRearm(saved.filterKeys { it in existingIds }, System.currentTimeMillis())
+        saved.keys.filter { it !in live }.forEach { snoozes.remove(it) } // finished, or its reminder was deleted
+        live.forEach { (id, millis) ->
+            val pending = pendingIntent(id, SNOOZE_PATH, create = true) ?: return@forEach
+            arm(millis, pending, ringing = true)
+        }
+    }
+
+    private fun arm(millis: Long, pending: PendingIntent, ringing: Boolean) {
+        if (ringing) {
+            alarms.setAlarmClock(AlarmManager.AlarmClockInfo(millis, openAppIntent()), pending)
+            return
+        }
         if (PermissionHelper.exactAlarmsAllowed(context)) {
             try {
                 alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pending)
@@ -53,6 +89,14 @@ class ReminderScheduler(context: Context) {
         }
         alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pending)
     }
+
+    /** Shown by Android when the person taps the next-alarm indicator: simply opens the app. */
+    private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        Intent(context, MainActivity::class.java),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
 
     private fun cancelPending(id: Long, path: String) {
         val pending = pendingIntent(id, path, create = false) ?: return
@@ -71,7 +115,7 @@ class ReminderScheduler(context: Context) {
 
     companion object {
         const val EXTRA_REMINDER_ID = "reminder_id"
-        private const val REMINDER_PATH = "reminder"
-        private const val SNOOZE_PATH = "snooze"
+        const val REMINDER_PATH = "reminder"
+        const val SNOOZE_PATH = "snooze"
     }
 }

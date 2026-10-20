@@ -2,6 +2,8 @@ package com.aggreykibe.dayflow.alarm
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
@@ -17,20 +19,31 @@ import com.aggreykibe.dayflow.domain.SoundIds
 class SoundPlayer(context: Context) {
     private val context = context.applicationContext
     private val handler = Handler(Looper.getMainLooper())
+    private val audioManager = this.context.getSystemService(AudioManager::class.java)
+    private val attributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ALARM)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
     private var player: MediaPlayer? = null
     private var ramp: Runnable? = null
+    private var focusRequest: AudioFocusRequest? = null
 
-    /** Starts [soundId]. With [gradual], volume climbs from quiet to full over about 15 seconds. */
+    /**
+     * Starts [soundId]. With [gradual], volume climbs from quiet to full over about 15 seconds.
+     * If the chosen sound cannot be played (a missing file, storage still locked after a restart), a bundled
+     * sound is used instead, so an alarm is never silent for that reason.
+     */
     fun start(soundId: String, loop: Boolean, gradual: Boolean, onFinished: (() -> Unit)? = null) {
         stop()
+        if (tryStart(soundId, loop, gradual, onFinished)) return
+        if (soundId != SoundIds.CHIME && tryStart(SoundIds.CHIME, loop, gradual, onFinished)) return
+        onFinished?.invoke()
+    }
+
+    private fun tryStart(soundId: String, loop: Boolean, gradual: Boolean, onFinished: (() -> Unit)?): Boolean {
         val mp = MediaPlayer()
         try {
-            mp.setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-            )
+            mp.setAudioAttributes(attributes)
             val raw = rawResourceFor(soundId)
             if (raw != null) {
                 context.resources.openRawResourceFd(raw).use { fd ->
@@ -42,22 +55,36 @@ class SoundPlayer(context: Context) {
             mp.isLooping = loop
             if (!loop) mp.setOnCompletionListener { onFinished?.invoke() }
             mp.prepare()
+            requestFocus()
             if (gradual) {
                 mp.setVolume(START_VOLUME, START_VOLUME)
                 beginRamp(mp)
             }
             mp.start()
             player = mp
+            return true
         } catch (e: Exception) {
             mp.release()
-            player = null
-            onFinished?.invoke()
+            return false
         }
+    }
+
+    /** Asks other apps (music, video) to pause. The alarm plays even if Android refuses: it must ring. */
+    private fun requestFocus() {
+        val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            .setAudioAttributes(attributes)
+            .setWillPauseWhenDucked(false)
+            .setOnAudioFocusChangeListener { }
+            .build()
+        audioManager.requestAudioFocus(request)
+        focusRequest = request
     }
 
     fun stop() {
         ramp?.let { handler.removeCallbacks(it) }
         ramp = null
+        focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+        focusRequest = null
         val mp = player ?: return
         player = null
         try { mp.stop() } catch (e: IllegalStateException) { /* was not playing */ }

@@ -10,12 +10,14 @@ import com.aggreykibe.dayflow.MainActivity
 import com.aggreykibe.dayflow.R
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.permissions.PermissionHelper
+import com.aggreykibe.dayflow.ui.alarm.AlarmActivity
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 object NotificationHelper {
     const val CHANNEL_ID = "reminders"
     const val ALARM_CHANNEL_ID = "alarms"
+    private const val EXTRA_REMINDER_ID = "reminder_id" // same key the alarm service and screen use
 
     /** Safe to call repeatedly; Android ignores an existing channel with the same id. */
     fun ensureChannel(context: Context) {
@@ -41,14 +43,23 @@ object NotificationHelper {
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    /** Returns true if a notification was posted, false if notifications are blocked. */
-    fun show(context: Context, reminder: Reminder): Boolean {
+    /**
+     * Returns true if a notification was posted, false if notifications are blocked.
+     * With [openAlarmScreen], tapping it (and, where Android allows, the lock screen itself) opens the
+     * alarm screen, which starts the ringing. Without it, tapping opens the normal app.
+     */
+    fun show(context: Context, reminder: Reminder, openAlarmScreen: Boolean = false): Boolean {
         if (!PermissionHelper.notificationsEnabled(context)) return false
         ensureChannel(context)
+        val target = if (openAlarmScreen) {
+            Intent(context, AlarmActivity::class.java).putExtra(EXTRA_REMINDER_ID, reminder.id)
+        } else {
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
         val open = PendingIntent.getActivity(
             context,
-            0,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            reminder.id.toInt(),
+            target,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val timeText = reminder.time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
@@ -60,6 +71,7 @@ object NotificationHelper {
             .setCategory(Notification.CATEGORY_REMINDER)
             .setContentIntent(open)
             .setAutoCancel(true)
+        if (openAlarmScreen) builder.setFullScreenIntent(open, true)
         if (reminder.message.isNotBlank()) builder.setStyle(Notification.BigTextStyle().bigText(reminder.message))
         context.getSystemService(NotificationManager::class.java).notify(reminder.id.toInt(), builder.build())
         return true

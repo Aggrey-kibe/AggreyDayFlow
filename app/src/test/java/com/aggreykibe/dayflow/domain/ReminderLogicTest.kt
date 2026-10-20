@@ -177,4 +177,12 @@ class ReminderLogicTest {
         assertEquals(135L, minutesUntil(t, t.plusHours(2).plusMinutes(15)))
         assertEquals(1440L, minutesUntil(t, t.plusDays(1)))
     }
+
+    // --- snooze recovery after restart
+    @Test fun onlyFutureSnoozesAreRearmed() {
+        val saved = mapOf(1L to 5_000L, 2L to 10_000L, 3L to 10_001L, 4L to 1L)
+        assertEquals(mapOf(3L to 10_001L), snoozesToRearm(saved, nowMillis = 10_000L)) // equal to now counts as over
+        assertEquals(saved, snoozesToRearm(saved, nowMillis = 0L))
+        assertEquals(emptyMap<Long, Long>(), snoozesToRearm(emptyMap(), nowMillis = 1L))
+    }
 }

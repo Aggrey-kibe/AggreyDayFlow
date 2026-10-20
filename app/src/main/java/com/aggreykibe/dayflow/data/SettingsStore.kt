@@ -11,7 +11,7 @@ import com.aggreykibe.dayflow.domain.ThemeMode
 
 /** App-wide defaults, saved on the device. Invalid or missing values fall back to safe defaults. */
 class SettingsStore(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs = DeviceStorage.prefs(context, PREFS_NAME)
 
     fun load(): AppSettings = AppSettings(
         ringStyle = RingStyle.values().firstOrNull { it.name == prefs.getString(K_STYLE, null) } ?: RingStyle.ALARM,

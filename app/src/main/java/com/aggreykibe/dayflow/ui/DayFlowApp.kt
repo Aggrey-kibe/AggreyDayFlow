@@ -12,6 +12,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.aggreykibe.dayflow.domain.RingStyle
 import com.aggreykibe.dayflow.permissions.PermissionHelper
 import com.aggreykibe.dayflow.ui.dashboard.DashboardScreen
 import com.aggreykibe.dayflow.ui.editor.EditorScreen
@@ -107,7 +108,8 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
             selectedDay = viewModel.selectedDay,
             now = now,
             notificationsOk = notificationsOk,
-            exactAlarmsOk = exactOk,
+            // Ringing alarms do not need the exact-alarm permission; only quiet notifications benefit from it.
+            exactAlarmsOk = exactOk || viewModel.reminders.none { it.ringStyle == RingStyle.NOTIFICATION },
             fullScreenOk = fullScreenOk,
             onSelectDay = viewModel::selectDay,
             onAdd = {

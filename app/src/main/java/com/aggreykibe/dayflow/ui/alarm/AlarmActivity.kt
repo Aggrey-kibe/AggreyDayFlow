@@ -94,6 +94,10 @@ class AlarmActivity : ComponentActivity() {
             return
         }
 
+        // Opened from the fallback notification (Android would not let the service ring from the background)?
+        // An open screen is allowed to start the ringing service, so start it now.
+        if (!AlarmService.isRinging) AlarmService.tryStart(this, id)
+
         val filter = IntentFilter(AlarmService.ACTION_ALARM_STOPPED)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(stoppedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
