@@ -25,7 +25,21 @@ val RING_CHOICES_SECONDS = listOf(30, 60, 120, 300)
 const val DEFAULT_SNOOZE_MINUTES = 10
 const val DEFAULT_RING_SECONDS = 120
 
-/** App-wide defaults used to pre-fill new reminders. Saved on the device. */
+/** The seven color themes. Their colors live in [ThemeCatalog]. */
+enum class ThemeId { OCEAN_CALM, SUNRISE, LAVENDER_DREAM, FOREST_FOCUS, MIDNIGHT_PREMIUM, ROSE_GLOW, MINIMAL_MONOCHROME }
+
+/** SYSTEM follows the phone's light/dark setting. */
+enum class ThemeMode {
+    SYSTEM, LIGHT, DARK;
+
+    fun isDark(systemIsDark: Boolean): Boolean = when (this) {
+        SYSTEM -> systemIsDark
+        LIGHT -> false
+        DARK -> true
+    }
+}
+
+/** App-wide settings. Saved on the device. The alarm values are the defaults used to pre-fill new reminders. */
 data class AppSettings(
     val ringStyle: RingStyle = RingStyle.ALARM,
     val vibrate: Boolean = true,
@@ -33,4 +47,6 @@ data class AppSettings(
     val ringSeconds: Int = DEFAULT_RING_SECONDS,
     val soundId: String = SoundIds.SYSTEM,
     val gradualVolume: Boolean = false,
+    val theme: ThemeId = ThemeId.OCEAN_CALM,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 )

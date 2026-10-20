@@ -58,6 +58,9 @@ import androidx.compose.ui.unit.sp
 import com.aggreykibe.dayflow.R
 import com.aggreykibe.dayflow.alarm.AlarmService
 import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.data.SettingsStore
+import com.aggreykibe.dayflow.domain.AlarmPalette
+import com.aggreykibe.dayflow.domain.ThemeCatalog
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.domain.Repeat
 import com.aggreykibe.dayflow.ui.theme.DayFlowTheme
@@ -104,11 +107,17 @@ class AlarmActivity : ComponentActivity() {
             finish()
         }
 
+        // The alarm uses the theme the person chose, read straight from storage because this screen can
+        // open when the main app is not running.
+        val settings = SettingsStore(this).load()
+        val palette = ThemeCatalog.get(settings.theme).alarm
+
         setContent {
-            DayFlowTheme {
+            DayFlowTheme(theme = settings.theme, mode = settings.themeMode) {
                 BackHandler { send(AlarmService.ACTION_STOP) }
                 AlarmScreen(
                     reminder = reminder,
+                    palette = palette,
                     onDismiss = { send(AlarmService.ACTION_STOP) },
                     onSnooze = { send(AlarmService.ACTION_SNOOZE) },
                     onDone = { send(AlarmService.ACTION_DONE) },
@@ -132,6 +141,7 @@ class AlarmActivity : ComponentActivity() {
 @Composable
 fun AlarmScreen(
     reminder: Reminder,
+    palette: AlarmPalette,
     onDismiss: () -> Unit,
     onSnooze: () -> Unit,
     onDone: () -> Unit,
@@ -160,7 +170,7 @@ fun AlarmScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF0F766E), Color(0xFF042F2E))))
+            .background(Brush.verticalGradient(listOf(Color(palette.top), Color(palette.bottom))))
             .safeDrawingPadding(),
     ) {
         Column(
@@ -189,7 +199,8 @@ fun AlarmScreen(
             if (reminder.message.isNotBlank()) {
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = Color.White.copy(alpha = 0.14f),
+                    // A darker panel, never a lighter one: it can only raise the contrast of the white text.
+                    color = Color.Black.copy(alpha = 0.25f),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
@@ -203,7 +214,7 @@ fun AlarmScreen(
             Spacer(Modifier.height(20.dp))
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B), contentColor = Color(0xFF1F2937)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(palette.accent), contentColor = Color(palette.onAccent)),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
             ) { Text(stringResource(R.string.alarm_dismiss), style = MaterialTheme.typography.titleMedium) }
             OutlinedButton(

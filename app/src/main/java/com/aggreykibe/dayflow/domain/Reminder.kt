@@ -78,3 +78,9 @@ fun progressFor(reminders: List<Reminder>, day: LocalDate, now: LocalDateTime): 
 }
 
 private const val MAX_LOOKAHEAD_DAYS = 3660
+
+/** Whole minutes from [from] until [to], rounded up so "in 1 min" shows until the moment arrives; never negative. */
+fun minutesUntil(from: LocalDateTime, to: LocalDateTime): Long {
+    val seconds = java.time.Duration.between(from, to).seconds
+    return if (seconds <= 0) 0 else (seconds + 59) / 60
+}

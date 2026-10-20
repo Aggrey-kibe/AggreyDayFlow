@@ -6,6 +6,8 @@ import com.aggreykibe.dayflow.domain.DEFAULT_RING_SECONDS
 import com.aggreykibe.dayflow.domain.DEFAULT_SNOOZE_MINUTES
 import com.aggreykibe.dayflow.domain.RingStyle
 import com.aggreykibe.dayflow.domain.SoundIds
+import com.aggreykibe.dayflow.domain.ThemeId
+import com.aggreykibe.dayflow.domain.ThemeMode
 
 /** App-wide defaults, saved on the device. Invalid or missing values fall back to safe defaults. */
 class SettingsStore(context: Context) {
@@ -18,6 +20,8 @@ class SettingsStore(context: Context) {
         ringSeconds = prefs.getInt(K_RING, DEFAULT_RING_SECONDS).coerceIn(10, 900),
         soundId = SoundIds.orDefault(prefs.getString(K_SOUND, null)),
         gradualVolume = prefs.getBoolean(K_GRADUAL, false),
+        theme = ThemeId.values().firstOrNull { it.name == prefs.getString(K_THEME, null) } ?: ThemeId.OCEAN_CALM,
+        themeMode = ThemeMode.values().firstOrNull { it.name == prefs.getString(K_MODE, null) } ?: ThemeMode.SYSTEM,
     )
 
     fun save(settings: AppSettings) {
@@ -28,6 +32,8 @@ class SettingsStore(context: Context) {
             .putInt(K_RING, settings.ringSeconds)
             .putString(K_SOUND, settings.soundId)
             .putBoolean(K_GRADUAL, settings.gradualVolume)
+            .putString(K_THEME, settings.theme.name)
+            .putString(K_MODE, settings.themeMode.name)
             .commit()
     }
 
@@ -39,5 +45,7 @@ class SettingsStore(context: Context) {
         const val K_RING = "ring_seconds"
         const val K_SOUND = "sound_id"
         const val K_GRADUAL = "gradual_volume"
+        const val K_THEME = "theme"
+        const val K_MODE = "theme_mode"
     }
 }

@@ -165,4 +165,16 @@ class ReminderLogicTest {
         assertEquals(listOf(1L), remindersForDay(list, mon.plusDays(14)).map { it.id })
         assertEquals(emptyList<Long>(), remindersForDay(list, tue).map { it.id })
     }
+
+    // --- countdown
+    @Test fun minutesUntilRoundsUpAndNeverGoesNegative() {
+        val t = mon.atTime(9, 0)
+        assertEquals(0L, minutesUntil(t, t))
+        assertEquals(0L, minutesUntil(t, t.minusMinutes(5)))
+        assertEquals(1L, minutesUntil(t, t.plusSeconds(1)))
+        assertEquals(1L, minutesUntil(t, t.plusSeconds(60)))
+        assertEquals(2L, minutesUntil(t, t.plusSeconds(61)))
+        assertEquals(135L, minutesUntil(t, t.plusHours(2).plusMinutes(15)))
+        assertEquals(1440L, minutesUntil(t, t.plusDays(1)))
+    }
 }

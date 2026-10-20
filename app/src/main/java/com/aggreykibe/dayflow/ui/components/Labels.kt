@@ -37,3 +37,12 @@ fun durationLabelMinutes(minutes: Int): String = stringResource(R.string.duratio
 fun durationLabelSeconds(seconds: Int): String =
     if (seconds < 60) stringResource(R.string.duration_seconds, seconds)
     else stringResource(R.string.duration_minutes, seconds / 60)
+
+@Composable
+fun modeLabel(mode: com.aggreykibe.dayflow.domain.ThemeMode): String = stringResource(
+    when (mode) {
+        com.aggreykibe.dayflow.domain.ThemeMode.SYSTEM -> R.string.mode_system
+        com.aggreykibe.dayflow.domain.ThemeMode.LIGHT -> R.string.mode_light
+        com.aggreykibe.dayflow.domain.ThemeMode.DARK -> R.string.mode_dark
+    },
+)

@@ -90,6 +90,33 @@
     <string name="category_exercise">Exercise</string>
     <string name="category_appointment">Appointment</string>
 
+    <!-- Appearance -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="field_mode">Light or dark</string>
+    <string name="mode_system">Follow phone</string>
+    <string name="mode_light">Light</string>
+    <string name="mode_dark">Dark</string>
+    <string name="theme_gallery_hint">Tap a theme to preview it below. It is only applied when you press Apply theme.</string>
+    <string name="theme_in_use">In use</string>
+    <string name="theme_previewing">Previewing</string>
+    <string name="theme_tap_to_preview">Tap to preview</string>
+    <string name="theme_apply">Apply theme</string>
+    <string name="theme_applied">This theme is in use</string>
+    <string name="preview_sample_title">Time to study</string>
+    <string name="preview_sample_when">Today at 6:30 PM · in 25 min</string>
+    <string name="preview_sample_row">School · 6:30 PM · Every week</string>
+    <string name="preview_primary">Main color</string>
+    <string name="preview_secondary">Accent</string>
+
+    <!-- Dashboard additions -->
+    <string name="progress_none">Nothing planned for this day yet.</string>
+    <string name="progress_of_total">%1$d of %2$d done</string>
+    <string name="countdown_now">any moment now</string>
+    <string name="countdown_minutes">in %1$d min</string>
+    <string name="countdown_hours">in %1$d h</string>
+    <string name="countdown_hours_minutes">in %1$d h %2$d min</string>
+    <string name="countdown_days">in %1$d d</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_alarm_defaults">Alarm defaults</string>

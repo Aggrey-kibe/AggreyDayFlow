@@ -12,7 +12,7 @@
 - Accessibility: 48dp touch targets, text in sp, headings and checkbox descriptions for screen readers, selectable radio rows, dark theme.
 
 ## Actually verified (in the build sandbox, 2026-10)
-- 39 JUnit tests pass (`GreetingTest` 5, `ReminderLogicTest` 27, `ReminderCodecTest` 7), compiled with Kotlin 2.0.20 and run on JUnit 4.13.2. They cover next-trigger rules including weekly repeat, sorting, completion, progress counts, the storage round trip, loading old saved data, and safe handling of invalid stored values.
+- (Earlier count, superseded by the Stage A line below.) 39 JUnit tests passed (`GreetingTest` 5, `ReminderLogicTest` 27, `ReminderCodecTest` 7), compiled with Kotlin 2.0.20 and run on JUnit 4.13.2. They cover next-trigger rules including weekly repeat, sorting, completion, progress counts, the storage round trip, loading old saved data, and safe handling of invalid stored values.
 - The framework-only layer (storage, permissions, notifications, scheduler, both receivers) compiles with no errors against the real Android API 34 `android.jar` (with a stand-in for the generated `R` class).
 - Compose files parse with no syntax errors; resource and string references were cross-checked (47 strings, all defined, argument counts match).
 - Gradle wrapper files (`gradlew`, `gradlew.bat`, `gradle-wrapper.jar`) added from the official Gradle 8.9.0 tag. The old `gradle-wrapper.properties` was in the wrong folder; it now lives in `gradle/wrapper/`.
@@ -29,7 +29,20 @@
 - Alarm screen redesigned: live clock, scheduled time, message card, Dismiss / Snooze N min / Mark as done, glow animation that is switched off when the phone's animations are disabled.
 - Data upgrade is backward compatible: reminders saved by earlier versions load with defaults (covered by a unit test).
 - The four sounds are original synthesized tones generated for this project (no third-party audio).
-- Not yet built from the master plan: themes and colors, per-category colors, backup/restore, search, first-run setup (planned for later stages).
+- Not yet built from the master plan: backup/restore, search, first-run setup, and a redesign of the editor and timetable screens (planned for later stages).
+
+## Stage A (theme system and home dashboard): written, build result pending
+- **Seven themes** (Ocean Calm, Sunrise, Lavender Dream, Forest Focus, Midnight Premium, Rose Glow, Minimal Monochrome), each with a light and a dark version, plus Light / Dark / Follow phone mode. Choice is saved on the device.
+- **Theme gallery** in Settings: tap a theme to preview it in a sample home screen, then press Apply theme. Nothing changes in the app until Apply.
+- **Home dashboard**: greeting and date, a hero "Next reminder" card with a countdown ("in 2 h 15 min"), an animated daily progress bar ("3 of 5 done"), and a timetable whose rows show a category color dot. The progress animation is switched off when the phone's animations are disabled.
+- **Alarm screen** now uses the chosen theme's colors; the message sits on a darker panel so white text stays readable.
+- Status-bar and navigation-bar icons follow the app's chosen mode, not only the phone's.
+- Colors are defined once in `domain/Palettes.kt` (no Compose imports), generated from a table that was checked for WCAG AA contrast.
+
+## Verified for Stage A (sandbox)
+- 48 JUnit tests pass. New `PaletteContrastTest` fails the build if any text pair in any of the 14 theme/mode combinations drops below 4.5:1, if outlines or category dots fall below 3:1, or if the alarm screen's white text or action button becomes hard to read. A deliberate bad color was injected once to prove the test catches it.
+- Framework layer compiles against Android API 34. Compose screens have no syntax errors; they are compiled by the GitHub build.
+- Contrast numbers are calculated, not eyeballed. They do not replace looking at the screens on a real phone: check every theme in light and dark.
 
 ## NOT verified (needs Android Studio / a phone)
 - Alarm mode (sound, vibration, full-screen alert over the lock screen, Done/Snooze/Stop buttons) is new and has not been run on a phone yet. Its framework code compiles against Android API 34; the Compose alert screen is compiled by the GitHub build.

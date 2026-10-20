@@ -58,4 +58,4 @@ Long-press the app icon > **App info** > **Uninstall**. This deletes its reminde
 
 ## What works and what does not (be honest with your friends)
 Works (written, see docs/STATUS.md for what has been tested): create, edit and delete reminders, one-time and every-day repeats, a timetable for any day, tick reminders done, saved on the phone, notifications and alarms, re-arming after a restart.
-Not built yet: color themes, per-category colors, search, backup and restore, widgets.
+Not built yet: search, backup and restore, widgets, first-run guide.
