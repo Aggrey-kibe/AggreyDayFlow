@@ -27,6 +27,9 @@ Mac/Linux: `./gradlew assembleDebug`.
 - `data/`: local storage. `scheduling/`: alarms and the boot/alarm receivers. `notifications/`: channel and notification. `permissions/`: notification and exact-alarm checks.
 - `ui/`: view model, navigation shell, dashboard, editor, theme.
 
+## Download
+Signed release APKs are published on the [Releases page](https://github.com/Aggrey-kibe/AggreyDayFlow/releases) once a version has been released; see `docs/RELEASING.md` for how a release is made and verified. Installing needs "Install unknown apps" to be allowed for the app you open the file from, because the app is shared directly and not through the Play Store.
+
 ## Alarm sounds
 32 bundled, offline sounds grouped by mood (Gentle wake-up, Trending, Energetic, Strong wake-up, Classic), each with a preview button, plus the phone's own alarm sound. All are original, synthesized by the scripts in `tools/sound-generator` (no samples or third-party audio). Choosing your own audio file is planned, not built yet.
 

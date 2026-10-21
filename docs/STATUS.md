@@ -39,6 +39,11 @@
 - Status-bar and navigation-bar icons follow the app's chosen mode, not only the phone's.
 - Colors are defined once in `domain/Palettes.kt` (no Compose imports), generated from a table that was checked for WCAG AA contrast.
 
+## Release pipeline: written, not yet run
+- `release.yml` builds a signed release APK on a version tag, then verifies it (exists, signed, package id, version, not debuggable) before publishing it to GitHub Releases with a SHA-256 file. Its shell logic was tested here with stand-in tools for the success path and six failure cases; **it has not yet run on GitHub**, and the key and the four secrets do not exist yet.
+- The release build has code shrinking turned **off** on purpose: only the unshrunk debug build has ever been tested on a phone.
+- Version is now 1.0.0 (versionCode 1). Needs the signing key and secrets described in `docs/RELEASING.md` before the first tag.
+
 ## Sound library (modern tones): written, build result and listening test pending
 - **32 bundled, offline alarm sounds** in five groups: Gentle wake-up (9), Trending (7), Energetic (6), Strong wake-up (6) and Classic (the 4 earlier tones). Plus the phone's own alarm sound.
 - Style: glassy FM bells, lo-fi electric piano, bubble pops, synthwave arps, chiptune, trap hats and 808s, supersaw risers, "power-up" sweeps.
