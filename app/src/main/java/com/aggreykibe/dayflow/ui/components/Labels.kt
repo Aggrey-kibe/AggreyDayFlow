@@ -4,16 +4,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.aggreykibe.dayflow.R
 import com.aggreykibe.dayflow.domain.Category
-import com.aggreykibe.dayflow.domain.SoundIds
+import com.aggreykibe.dayflow.domain.SoundCatalog
+import com.aggreykibe.dayflow.domain.SoundVibe
 
 @Composable
-fun soundLabel(id: String): String = stringResource(
-    when (id) {
-        SoundIds.CHIME -> R.string.sound_chime
-        SoundIds.BELLS -> R.string.sound_bells
-        SoundIds.BEEP -> R.string.sound_beep
-        SoundIds.RISING -> R.string.sound_rising
-        else -> R.string.sound_system
+fun soundLabel(id: String): String =
+    SoundCatalog.find(id)?.name ?: stringResource(R.string.sound_system)
+
+@Composable
+fun vibeLabel(vibe: SoundVibe): String = stringResource(
+    when (vibe) {
+        SoundVibe.GENTLE -> R.string.vibe_gentle
+        SoundVibe.TRENDING -> R.string.vibe_trending
+        SoundVibe.ENERGETIC -> R.string.vibe_energetic
+        SoundVibe.STRONG -> R.string.vibe_strong
+        SoundVibe.CLASSIC -> R.string.vibe_classic
     },
 )
 

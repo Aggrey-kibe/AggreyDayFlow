@@ -22,7 +22,7 @@ data class Reminder(
     val vibrate: Boolean = true,
     val snoozeMinutes: Int = DEFAULT_SNOOZE_MINUTES,
     val ringSeconds: Int = DEFAULT_RING_SECONDS,
-    val soundId: String = SoundIds.SYSTEM,
+    val soundId: String = SoundIds.DEFAULT,
 ) {
     fun occursOn(day: LocalDate): Boolean = when (repeat) {
         Repeat.ONCE -> day == date

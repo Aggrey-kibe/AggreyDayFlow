@@ -38,7 +38,7 @@ class ReminderCodecTest {
             id = 3, title = "Time to study", date = day, time = LocalTime.of(6, 45), repeat = Repeat.WEEKLY,
             completedDates = setOf(day), message = "Put your phone aside.\nOpen your notes & focus 30 min.",
             category = Category.SCHOOL, ringStyle = RingStyle.NOTIFICATION, vibrate = false,
-            snoozeMinutes = 15, ringSeconds = 60, soundId = SoundIds.BELLS,
+            snoozeMinutes = 15, ringSeconds = 60, soundId = "lofi_morning",
         )
         assertEquals(listOf(r), ReminderCodec.decode(ReminderCodec.encode(listOf(r))))
     }
@@ -56,7 +56,7 @@ class ReminderCodecTest {
         assertEquals(true, r.vibrate)
         assertEquals(DEFAULT_SNOOZE_MINUTES, r.snoozeMinutes)
         assertEquals(DEFAULT_RING_SECONDS, r.ringSeconds)
-        assertEquals(SoundIds.SYSTEM, r.soundId)
+        assertEquals(SoundIds.DEFAULT, r.soundId)
     }
 
     @Test fun unknownOrOutOfRangeValuesFallBackSafely() {
@@ -66,6 +66,6 @@ class ReminderCodecTest {
         assertEquals(RingStyle.ALARM, r.ringStyle)
         assertEquals(120, r.snoozeMinutes) // clamped to the allowed maximum
         assertEquals(10, r.ringSeconds)    // clamped to the allowed minimum
-        assertEquals(SoundIds.SYSTEM, r.soundId)
+        assertEquals(SoundIds.DEFAULT, r.soundId)
     }
 }

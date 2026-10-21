@@ -39,6 +39,16 @@
 - Status-bar and navigation-bar icons follow the app's chosen mode, not only the phone's.
 - Colors are defined once in `domain/Palettes.kt` (no Compose imports), generated from a table that was checked for WCAG AA contrast.
 
+## Sound library (modern tones): written, build result and listening test pending
+- **32 bundled, offline alarm sounds** in five groups: Gentle wake-up (9), Trending (7), Energetic (6), Strong wake-up (6) and Classic (the 4 earlier tones). Plus the phone's own alarm sound.
+- Style: glassy FM bells, lo-fi electric piano, bubble pops, synthwave arps, chiptune, trap hats and 808s, supersaw risers, "power-up" sweeps.
+- **Picker**: Settings and the reminder editor show the chosen sound on a button; tapping opens a list grouped by mood with a **Play** button on every row, so you can listen before choosing. New reminders default to "Glass Drop". Reminders saved earlier keep the sound they had.
+- **Every sound is original**: synthesized from math by `tools/sound-generator` (no samples, no third-party audio, no licences to track). Total size 1.25 MB as compressed OGG.
+- If a chosen sound cannot be played, "Glass Drop" plays instead, so an alarm is never silent for that reason.
+- Verified here: each sound was measured for clipping, silence, loudness, DC offset and clean endings (two real problems were found and fixed), and all 32 files decode. 54 unit tests pass, including a test that fails if a catalog entry has no audio file or an audio file is not in the catalog.
+- **Not verified: how they actually sound.** The measurements cannot judge taste or pleasantness. That needs your ears: please listen to every sound and say which to keep, change or replace.
+- Still planned from the sound brief: choose your own audio file from the phone, alarm-volume behavior setting.
+
 ## Phase 1 (alarm reliability): written, build and phone results pending
 Problems found in the earlier alarm code, and what was changed:
 1. Alarms depended on a permission that sideloaded apps do not get by default on Android 14+, falling back to alarms Android can delay for minutes. **Ringing alarms now use Android's alarm-clock API** (no special permission, not delayed by battery saving).

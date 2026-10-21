@@ -36,7 +36,7 @@ class SoundPlayer(context: Context) {
     fun start(soundId: String, loop: Boolean, gradual: Boolean, onFinished: (() -> Unit)? = null) {
         stop()
         if (tryStart(soundId, loop, gradual, onFinished)) return
-        if (soundId != SoundIds.CHIME && tryStart(SoundIds.CHIME, loop, gradual, onFinished)) return
+        if (soundId != SoundIds.DEFAULT && tryStart(SoundIds.DEFAULT, loop, gradual, onFinished)) return
         onFinished?.invoke()
     }
 
@@ -105,13 +105,7 @@ class SoundPlayer(context: Context) {
         handler.postDelayed(task, RAMP_INTERVAL_MS)
     }
 
-    private fun rawResourceFor(soundId: String): Int? = when (soundId) {
-        SoundIds.CHIME -> R.raw.chime
-        SoundIds.BELLS -> R.raw.bells
-        SoundIds.BEEP -> R.raw.beep
-        SoundIds.RISING -> R.raw.rising
-        else -> null // SoundIds.SYSTEM: the phone's own alarm sound
-    }
+    private fun rawResourceFor(soundId: String): Int? = SoundResources.rawFor(soundId) // null = the phone's own sound
 
     private fun systemAlarmUri(): Uri =
         RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)

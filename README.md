@@ -27,6 +27,9 @@ Mac/Linux: `./gradlew assembleDebug`.
 - `data/`: local storage. `scheduling/`: alarms and the boot/alarm receivers. `notifications/`: channel and notification. `permissions/`: notification and exact-alarm checks.
 - `ui/`: view model, navigation shell, dashboard, editor, theme.
 
+## Alarm sounds
+32 bundled, offline sounds grouped by mood (Gentle wake-up, Trending, Energetic, Strong wake-up, Classic), each with a preview button, plus the phone's own alarm sound. All are original, synthesized by the scripts in `tools/sound-generator` (no samples or third-party audio). Choosing your own audio file is planned, not built yet.
+
 ## Alarm reliability
 Ringing alarms use Android's alarm-clock API, a foreground service with a wake lock and audio focus, and a loud full-screen notification. Alarms and snoozes are re-armed after a restart (even before the PIN is entered), an app update, and time or time-zone changes. Limits that cannot be fixed by any app: a phone that is switched off cannot ring, and **Force stop** in Android settings cancels scheduled alarms until the app is opened again. See `docs/ALARM_TESTING.md` for the phone test sheet; results are recorded in `docs/STATUS.md` only after they have been run.
 
