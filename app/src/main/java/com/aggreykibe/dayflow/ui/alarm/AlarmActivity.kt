@@ -57,9 +57,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aggreykibe.dayflow.R
 import com.aggreykibe.dayflow.alarm.AlarmService
-import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.data.AlarmLog
+import com.aggreykibe.dayflow.data.ReminderLookup
 import com.aggreykibe.dayflow.data.SettingsStore
 import com.aggreykibe.dayflow.domain.AlarmPalette
+import com.aggreykibe.dayflow.domain.AlarmStage
 import com.aggreykibe.dayflow.domain.ThemeCatalog
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.domain.Repeat
@@ -88,11 +90,13 @@ class AlarmActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val id = intent.getLongExtra(AlarmService.EXTRA_REMINDER_ID, -1L)
-        val reminder = ReminderStore(this).load().firstOrNull { it.id == id }
+        val reminder = ReminderLookup.find(this, id)
         if (reminder == null) {
             finish()
             return
         }
+
+        AlarmLog.record(this, AlarmStage.SCREEN_SHOWN, "id=$id")
 
         // Opened from the fallback notification (Android would not let the service ring from the background)?
         // An open screen is allowed to start the ringing service, so start it now.

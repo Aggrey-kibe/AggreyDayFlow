@@ -19,7 +19,7 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_TIMEZONE_CHANGED,
             Intent.ACTION_TIME_CHANGED,
             "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED",
-            -> ReminderScheduler(context).rescheduleAll(ReminderStore(context).load())
+            -> ReminderScheduler(context).rescheduleAll(ReminderStore(context).load(), logSource = intent.action?.substringAfterLast('.'))
         }
     }
 }

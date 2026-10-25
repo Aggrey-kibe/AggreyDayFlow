@@ -14,6 +14,13 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
+    <!-- Lets the app look for the Tecno/Infinix phone-manager app to open its battery screen. -->
+    <queries>
+        <package android:name="com.transsion.phonemaster" />
+        <package android:name="com.cyin.himgr" />
+        <package android:name="com.itel.autobootmanager" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"

@@ -39,7 +39,13 @@
 - Status-bar and navigation-bar icons follow the app's chosen mode, not only the phone's.
 - Colors are defined once in `domain/Palettes.kt` (no Compose imports), generated from a table that was checked for WCAG AA contrast.
 
-## Release pipeline: written, not yet run
+## Locked-phone alarm failure (reported on a Tecno phone, Android 15): diagnosis tools added, cause not yet proven
+- Code trace: scheduling (alarm-clock API), receiver, service type, permissions, notification with full-screen intent and the manifest are all correct on paper for Android 15. **No code bug was found that would stop every stage.**
+- Real defect found: the app swallowed errors and recorded nothing, so a failing stage was invisible. Version 1.0.1 adds an event log, a 20-second test alarm that uses the real path, an "Alarm health check" (permissions, channel importance, battery, alarm volume, Do Not Disturb), Android's own record of why the app was last stopped, and a copyable report.
+- Most likely cause on Tecno/HiOS (not proven): the phone's battery manager stops the app when the screen locks, which also cancels its scheduled alarms. Code cannot override that; the app now explains the settings to change and opens the relevant screens (best effort, not tested on a Tecno phone).
+- **Not verified:** that the alarm now rings on the Tecno phone. Run the test in `docs/ALARM_TESTING.md` and send the copied report.
+
+## Release pipeline: v1.0.0 published and verified by the owner
 - `release.yml` builds a signed release APK on a version tag, then verifies it (exists, signed, package id, version, not debuggable) before publishing it to GitHub Releases with a SHA-256 file. Its shell logic was tested here with stand-in tools for the success path and six failure cases; **it has not yet run on GitHub**, and the key and the four secrets do not exist yet.
 - The release build has code shrinking turned **off** on purpose: only the unshrunk debug build has ever been tested on a phone.
 - Version is now 1.0.0 (versionCode 1). Needs the signing key and secrets described in `docs/RELEASING.md` before the first tag.

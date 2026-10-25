@@ -16,8 +16,12 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import com.aggreykibe.dayflow.R
+import com.aggreykibe.dayflow.data.AlarmLog
+import com.aggreykibe.dayflow.data.ReminderLookup
 import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.data.TestAlarm
 import com.aggreykibe.dayflow.data.SettingsStore
+import com.aggreykibe.dayflow.domain.AlarmStage
 import com.aggreykibe.dayflow.domain.DEFAULT_SNOOZE_MINUTES
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.notifications.NotificationHelper
@@ -45,12 +49,17 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val id = intent?.getLongExtra(EXTRA_REMINDER_ID, -1L) ?: -1L
         when (intent?.action) {
-            ACTION_STOP -> stopRinging()
+            ACTION_STOP -> {
+                AlarmLog.record(this, AlarmStage.USER_DISMISS, "id=$id")
+                stopRinging()
+            }
             ACTION_DONE -> {
+                AlarmLog.record(this, AlarmStage.USER_DONE, "id=$id")
                 markDone(id)
                 stopRinging()
             }
             ACTION_SNOOZE -> {
+                AlarmLog.record(this, AlarmStage.USER_SNOOZE, "id=$id")
                 val minutes = findReminder(id)?.snoozeMinutes ?: DEFAULT_SNOOZE_MINUTES
                 ReminderScheduler(this).snooze(id, minutes) // replaces any earlier snooze: never more than one
                 cancelPlainNotification(id)
@@ -61,7 +70,7 @@ class AlarmService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun findReminder(id: Long): Reminder? = ReminderStore(this).load().firstOrNull { it.id == id }
+    private fun findReminder(id: Long): Reminder? = ReminderLookup.find(this, id)
 
     private fun startRinging(id: Long) {
         val reminder = findReminder(id)
@@ -76,6 +85,7 @@ class AlarmService : Service() {
                 startForeground(NOTIFICATION_ID, notification)
             }
         } catch (e: Exception) {
+            AlarmLog.record(this, AlarmStage.FOREGROUND_FAILED, "id=$id ${e.javaClass.simpleName}: ${e.message}")
             // Could not become a foreground service. Post a loud notification that opens the alarm screen;
             // the screen is in the foreground, so it is allowed to start the ring itself.
             isRinging = false
@@ -83,7 +93,9 @@ class AlarmService : Service() {
             stopSelf()
             return
         }
+        AlarmLog.record(this, AlarmStage.SERVICE_STARTED, "id=$id")
         if (reminder == null) {
+            AlarmLog.record(this, AlarmStage.RECEIVER_NO_REMINDER, "id=$id was not found in storage")
             stopRinging()
             return
         }
@@ -95,7 +107,8 @@ class AlarmService : Service() {
         currentId = id
         stopSoundAndVibration() // in case a second alarm replaces one that is still ringing
         acquireWakeLock(reminder.ringSeconds)
-        sound.start(reminder.soundId, loop = true, gradual = SettingsStore(this).load().gradualVolume)
+        val soundOk = sound.start(reminder.soundId, loop = true, gradual = SettingsStore(this).load().gradualVolume)
+        AlarmLog.record(this, if (soundOk) AlarmStage.SOUND_STARTED else AlarmStage.SOUND_FAILED, "id=$id sound=${reminder.soundId}")
         if (reminder.vibrate) startVibration()
         handler.removeCallbacks(timeout)
         handler.postDelayed(timeout, reminder.ringSeconds * 1000L)
@@ -144,6 +157,7 @@ class AlarmService : Service() {
         val v = getSystemService(Vibrator::class.java) ?: return
         vibrator = v
         v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 600, 400), 0))
+        AlarmLog.record(this, AlarmStage.VIBRATING, if (v.hasVibrator()) "started" else "this phone reports no vibrator")
     }
 
     private fun stopSoundAndVibration() {
@@ -153,6 +167,7 @@ class AlarmService : Service() {
     }
 
     private fun markDone(id: Long) {
+        if (id == TestAlarm.TEST_ID) return
         val store = ReminderStore(this)
         val all = store.load()
         val reminder = all.firstOrNull { it.id == id } ?: return
@@ -171,6 +186,7 @@ class AlarmService : Service() {
 
     /** Nobody answered: leave a normal notification behind so the reminder is not lost, then go quiet. */
     private fun onTimeout() {
+        AlarmLog.record(this, AlarmStage.RING_TIMEOUT, "id=$currentId nobody answered")
         findReminder(currentId)?.let { NotificationHelper.show(this, it, openAlarmScreen = false) }
         stopRinging()
     }
@@ -230,8 +246,10 @@ class AlarmService : Service() {
             context.startForegroundService(
                 Intent(context, AlarmService::class.java).putExtra(EXTRA_REMINDER_ID, reminderId),
             )
+            AlarmLog.record(context, AlarmStage.SERVICE_REQUESTED, "id=$reminderId")
             true
         } catch (e: Exception) {
+            AlarmLog.record(context, AlarmStage.SERVICE_REFUSED, "id=$reminderId ${e.javaClass.simpleName}: ${e.message}")
             false
         }
 

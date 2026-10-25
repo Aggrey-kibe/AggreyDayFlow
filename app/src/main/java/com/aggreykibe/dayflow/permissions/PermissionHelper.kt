@@ -39,6 +39,15 @@ object PermissionHelper {
         launchSafely(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
+    /** Opens the settings page for one notification channel, where its importance can be raised. */
+    fun openChannelSettings(context: Context, channelId: String) {
+        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            .putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        launchSafely(context, intent)
+    }
+
     fun openNotificationSettings(context: Context) {
         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)

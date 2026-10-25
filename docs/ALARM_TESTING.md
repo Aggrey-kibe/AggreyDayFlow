@@ -1,5 +1,26 @@
 # Alarm test sheet (run on a real phone)
 
+## Fastest test: the built-in 20-second test (version 1.0.1 and newer)
+1. Open the app, tap the gear icon, scroll to **Alarm health check**.
+2. Read the list. Anything marked **PROBLEM** is a likely reason an alarm can fail: fix it first (buttons are provided).
+3. Press **Test alarm in 20 seconds**, then **press the power button to lock the phone** and wait. The test goes through the
+   same path as a real reminder.
+4. After it rings (or does not), unlock, open Settings again and press **Refresh**. **Recent alarm events** shows each stage
+   that happened, in order:
+   `SCHEDULED` (handed to Android) then `RECEIVER_FIRED` (Android woke the app) then `SERVICE_REQUESTED`, `SERVICE_STARTED`,
+   `SOUND_STARTED`, `NOTIFICATION_POSTED` / `SCREEN_SHOWN`. **The first stage that is missing is where the alarm breaks.**
+5. Press **Copy report** and paste it to the developer. The report also lists why Android last stopped the app. It contains no
+   reminder titles or messages.
+
+How to read the result
+- `SCHEDULED` but never `RECEIVER_FIRED`: Android never woke the app. On Tecno, Infinix and itel phones this almost always
+  means the phone's own battery manager stopped the app when the screen locked; follow the Tecno steps in the app.
+- `RECEIVER_FIRED` but `SERVICE_REFUSED` or `FOREGROUND_FAILED`: Android woke the app but refused the ringing service. The
+  app then posts a loud notification instead; the error text shows the reason.
+- `SOUND_FAILED`: the sound could not play (the error text says why). `Alarm volume` showing Muted also explains silence.
+- `NOTIFICATION_BLOCKED`: notifications are off for the app.
+- Everything present but nothing seen: check `Full-screen alerts` and `Do Not Disturb` in the list.
+
 Nothing here counts as "works" until you have ticked it on your own phone. Write **Pass**, **Fail** or **Not tried**,
 and a note of what you saw. Send the table back and any **Fail** gets fixed first.
 

@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import com.aggreykibe.dayflow.alarm.AlarmService
-import com.aggreykibe.dayflow.data.ReminderStore
+import com.aggreykibe.dayflow.data.AlarmLog
+import com.aggreykibe.dayflow.data.ReminderLookup
+import com.aggreykibe.dayflow.domain.AlarmStage
 import com.aggreykibe.dayflow.domain.RingStyle
 import com.aggreykibe.dayflow.notifications.NotificationHelper
 import java.time.LocalDateTime
@@ -21,10 +23,17 @@ class ReminderReceiver : BroadcastReceiver() {
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DayFlow:alarmReceiver")
             .acquire(WAKE_MILLIS)
 
-        val scheduler = ReminderScheduler(context)
-        if (intent.data?.host == ReminderScheduler.SNOOZE_PATH) scheduler.forgetSnooze(id)
+        val kind = intent.data?.host ?: "reminder"
+        AlarmLog.record(context, AlarmStage.RECEIVER_FIRED, "id=$id ($kind)")
 
-        val reminder = ReminderStore(context).load().firstOrNull { it.id == id } ?: return
+        val scheduler = ReminderScheduler(context)
+        if (kind == ReminderScheduler.SNOOZE_PATH) scheduler.forgetSnooze(id)
+
+        val reminder = ReminderLookup.find(context, id)
+        if (reminder == null) {
+            AlarmLog.record(context, AlarmStage.RECEIVER_NO_REMINDER, "id=$id was not found in storage")
+            return
+        }
         val now = LocalDateTime.now()
         if (!reminder.isCompletedOn(now.toLocalDate())) {
             if (reminder.ringStyle == RingStyle.NOTIFICATION) {

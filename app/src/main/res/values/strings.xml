@@ -120,6 +120,26 @@
     <string name="countdown_hours_minutes">in %1$d h %2$d min</string>
     <string name="countdown_days">in %1$d d</string>
 
+    <!-- Alarm health check -->
+    <string name="health_title">Alarm health check</string>
+    <string name="health_intro">This checks what your phone allows and records what happens each time an alarm rings, so a problem can be found instead of guessed. To test: press the test button, lock your phone, and wait 20 seconds.</string>
+    <string name="health_test_button">Test alarm in 20 seconds</string>
+    <string name="health_test_scheduled">Test alarm set for %1$s. Press the power button to lock your phone now and wait. After it has rung (or not), unlock the phone, open Settings here and press Refresh.</string>
+    <string name="health_refresh">Refresh</string>
+    <string name="health_events_title">Recent alarm events</string>
+    <string name="health_events_empty">Nothing recorded yet.</string>
+    <string name="health_copy">Copy report</string>
+    <string name="health_copied">Report copied. Paste it into your message. It contains no reminder titles or messages.</string>
+    <string name="health_fix_channel">Open alarm notification settings</string>
+    <string name="tecno_title">Tecno, Infinix and itel phones</string>
+    <string name="tecno_intro">These phones have their own battery manager that can stop apps when the screen locks. Menu names differ between versions.</string>
+    <string name="tecno_step1">1. Battery: set Aggrey DayFlow to No restrictions (or Unrestricted).</string>
+    <string name="tecno_step2">2. Autostart: turn it on for Aggrey DayFlow.</string>
+    <string name="tecno_step3">3. Recent apps: open the Aggrey DayFlow card and lock it (pull it down or tap the lock icon) so cleaning does not remove it.</string>
+    <string name="tecno_step4">4. Turn off any option that cleans or closes apps when the screen locks.</string>
+    <string name="tecno_open_autostart">Open autostart settings</string>
+    <string name="tecno_open_app">Open app settings</string>
+
     <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_alarm_defaults">Alarm defaults</string>

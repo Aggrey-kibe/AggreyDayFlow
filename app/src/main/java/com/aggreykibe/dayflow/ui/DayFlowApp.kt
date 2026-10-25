@@ -101,6 +101,7 @@ fun DayFlowApp(viewModel: ReminderViewModel) {
             onFixFullScreen = { PermissionHelper.openFullScreenSettings(context) },
             onOpenBatterySettings = { PermissionHelper.openBatterySettings(context) },
             onBack = { settingsOpen = false },
+            refreshKey = tick,
         )
     } else {
         DashboardScreen(

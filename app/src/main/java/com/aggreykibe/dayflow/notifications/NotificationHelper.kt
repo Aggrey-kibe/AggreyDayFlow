@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import com.aggreykibe.dayflow.MainActivity
 import com.aggreykibe.dayflow.R
+import com.aggreykibe.dayflow.data.AlarmLog
+import com.aggreykibe.dayflow.domain.AlarmStage
 import com.aggreykibe.dayflow.domain.Reminder
 import com.aggreykibe.dayflow.permissions.PermissionHelper
 import com.aggreykibe.dayflow.ui.alarm.AlarmActivity
@@ -49,7 +51,10 @@ object NotificationHelper {
      * alarm screen, which starts the ringing. Without it, tapping opens the normal app.
      */
     fun show(context: Context, reminder: Reminder, openAlarmScreen: Boolean = false): Boolean {
-        if (!PermissionHelper.notificationsEnabled(context)) return false
+        if (!PermissionHelper.notificationsEnabled(context)) {
+            AlarmLog.record(context, AlarmStage.NOTIFICATION_BLOCKED, "id=${reminder.id}: notifications are turned off for the app")
+            return false
+        }
         ensureChannel(context)
         val target = if (openAlarmScreen) {
             Intent(context, AlarmActivity::class.java).putExtra(EXTRA_REMINDER_ID, reminder.id)
@@ -74,6 +79,7 @@ object NotificationHelper {
         if (openAlarmScreen) builder.setFullScreenIntent(open, true)
         if (reminder.message.isNotBlank()) builder.setStyle(Notification.BigTextStyle().bigText(reminder.message))
         context.getSystemService(NotificationManager::class.java).notify(reminder.id.toInt(), builder.build())
+        AlarmLog.record(context, AlarmStage.NOTIFICATION_POSTED, "id=${reminder.id} ${if (openAlarmScreen) "loud, opens alarm screen" else "normal"}")
         return true
     }
 }

@@ -72,6 +72,7 @@ fun SettingsScreen(
     onOpenBatterySettings: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    refreshKey: Int = 0,
 ) {
     Scaffold(modifier = modifier, containerColor = MaterialTheme.colorScheme.background) { padding ->
         Column(
@@ -130,6 +131,10 @@ fun SettingsScreen(
                     onClick = onOpenBatterySettings,
                     modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.minTouchTarget),
                 ) { Text(stringResource(R.string.perm_battery_action), style = MaterialTheme.typography.labelLarge) }
+            }
+
+            SectionCard(stringResource(R.string.health_title)) {
+                AlarmHealthSection(refreshKey)
             }
 
             Button(

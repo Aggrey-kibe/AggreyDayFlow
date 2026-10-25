@@ -10,6 +10,8 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import com.aggreykibe.dayflow.R
+import com.aggreykibe.dayflow.data.AlarmLog
+import com.aggreykibe.dayflow.domain.AlarmStage
 import com.aggreykibe.dayflow.domain.SoundIds
 
 /**
@@ -33,11 +35,15 @@ class SoundPlayer(context: Context) {
      * If the chosen sound cannot be played (a missing file, storage still locked after a restart), a bundled
      * sound is used instead, so an alarm is never silent for that reason.
      */
-    fun start(soundId: String, loop: Boolean, gradual: Boolean, onFinished: (() -> Unit)? = null) {
+    fun start(soundId: String, loop: Boolean, gradual: Boolean, onFinished: (() -> Unit)? = null): Boolean {
         stop()
-        if (tryStart(soundId, loop, gradual, onFinished)) return
-        if (soundId != SoundIds.DEFAULT && tryStart(SoundIds.DEFAULT, loop, gradual, onFinished)) return
+        if (tryStart(soundId, loop, gradual, onFinished)) return true
+        if (soundId != SoundIds.DEFAULT && tryStart(SoundIds.DEFAULT, loop, gradual, onFinished)) {
+            AlarmLog.record(context, AlarmStage.SOUND_FALLBACK, "\"$soundId\" failed, played the default sound instead")
+            return true
+        }
         onFinished?.invoke()
+        return false
     }
 
     private fun tryStart(soundId: String, loop: Boolean, gradual: Boolean, onFinished: (() -> Unit)?): Boolean {
@@ -65,6 +71,7 @@ class SoundPlayer(context: Context) {
             return true
         } catch (e: Exception) {
             mp.release()
+            AlarmLog.record(context, AlarmStage.SOUND_FAILED, "$soundId: ${e.javaClass.simpleName} ${e.message}")
             return false
         }
     }
